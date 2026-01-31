@@ -24,11 +24,12 @@ export const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
         if (name && desc) {
             const coords = locationCoords[selectedLocation] || { x: 600, y: 450 };
             onCreate({
-                name,
-                desc,
+                title: name,
+                description: desc,
                 type,
-                isMajor,
-                locationName: selectedLocation || 'Campus',
+                is_major: isMajor,
+                location_name: selectedLocation || 'Campus',
+                start_time: new Date().toISOString(),
                 coords
             });
             setName('');
