@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Map as MapIcon,
@@ -27,7 +27,8 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import api, { auth, locations as locationsApi, checkins, user, social, ghost, events } from './api.js';
+import api, { auth, locations as locationsApi, checkins, user, social, ghost, events, chat } from './api.js';
+import { supabase } from './supabase';
 
 // --- Utilities ---
 function cn(...inputs) {
@@ -39,18 +40,18 @@ const mapLocation = (loc) => ({
   id: loc.id,
   name: loc.name,
   type: loc.type,
-  occupancy: loc.occupancyPercent || Math.round((loc.currentOccupancy / loc.capacity) * 100),
+  occupancy: loc.occupancy_percent || loc.occupancyPercent || Math.round(((loc.current_occupancy || loc.currentOccupancy || 0) / (loc.capacity || 100)) * 100),
   capacity: loc.capacity,
-  desc: loc.description || `${loc.activeUsers || 0} people studying`,
+  desc: loc.description || `${loc.active_users || loc.activeUsers || 0} people studying`,
   coords: {
-    x: loc.mapX || (
+    x: loc.map_x || loc.mapX || (
       loc.name?.includes('Library') ? 650 :
         loc.name?.includes('Lounge') ? 950 :
           loc.name?.includes('Tech') ? 250 :
             loc.name?.includes('Innovation') ? 940 :
               loc.name?.includes('Sports') ? 900 : 250
     ),
-    y: loc.mapY || (
+    y: loc.map_y || loc.mapY || (
       loc.name?.includes('Library') ? 465 :
         loc.name?.includes('Lounge') ? 250 :
           loc.name?.includes('Tech') ? 670 :
@@ -58,10 +59,10 @@ const mapLocation = (loc) => ({
               loc.name?.includes('Sports') ? 650 : 325
     )
   },
-  color: loc.occupancyPercent > 70 ? 'text-vibe-rose' : loc.occupancyPercent > 30 ? 'text-amber-400' : 'text-vibe-cyan',
+  color: (loc.occupancy_percent || loc.occupancyPercent) > 70 ? 'text-vibe-rose' : (loc.occupancy_percent || loc.occupancyPercent) > 30 ? 'text-amber-400' : 'text-vibe-cyan',
   amenities: loc.amenities,
-  avgNoise: loc.avgNoise,
-  photoUrl: loc.photoUrl
+  avgNoise: loc.avg_noise || loc.avgNoise,
+  photoUrl: loc.photo_url || loc.photoUrl
 });
 
 // Fallback data (for offline/demo mode)
@@ -83,7 +84,7 @@ const CHATS = [
 ];
 
 // --- Styles ---
-const CARD_STYLE = "relative overflow-hidden bg-[#0A0A0F] bg-opacity-80 backdrop-blur-2xl border border-white/5 rounded-[2rem] transition-all duration-500 hover:border-white/10 hover:shadow-[0_0_50px_-12px_rgba(124,58,237,0.25)] hover:-translate-y-1 group";
+const CARD_STYLE = "relative overflow-hidden glass-card glass-card-hover rounded-[2rem] group shimmer";
 const NAV_ITEM_STYLE = "relative p-4 rounded-2xl text-gray-400 transition-all duration-300 hover:text-white hover:bg-white/5";
 const NAV_ITEM_ACTIVE = "text-white bg-white/10 shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)]";
 
@@ -122,83 +123,99 @@ const AuthModal = ({ isOpen, onClose, onAuth }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="w-full max-w-md bg-[#0A0A0F] border border-white/10 rounded-3xl p-8"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="w-full max-w-md relative overflow-hidden"
       >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-display font-bold">{isLogin ? 'Welcome Back' : 'Join VibeSRM'}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full"><X className="w-5 h-5" /></button>
-        </div>
+        {/* Purple/Black/White Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0f0d1a] to-[#050508] rounded-[2rem]" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-600/20 via-fuchsia-600/10 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-white/[0.04] to-transparent blur-2xl" />
 
-        {error && (
-          <div className="mb-4 p-3 bg-vibe-rose/20 border border-vibe-rose/50 rounded-xl text-sm text-vibe-rose">
-            {error}
+        <div className="relative z-10 p-8 rounded-[2rem] border border-white/[0.06]">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center mb-4 -rotate-6">
+                <Zap className="w-6 h-6 text-white rotate-6" />
+              </div>
+              <h2 className="text-2xl font-semibold text-white tracking-tight">{isLogin ? 'Welcome back' : 'Join VibeSRM'}</h2>
+              <p className="text-gray-500 text-sm mt-1">{isLogin ? 'Sign in to continue' : 'Create your account'}</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition text-gray-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!isLogin && (
-            <>
-              <div>
-                <label className="text-sm text-gray-400 block mb-2">Username</label>
-                <input
-                  value={username} onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
-                  placeholder="coolstudent123"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 block mb-2">Full Name</label>
-                <input
-                  value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
-                  placeholder="Your Name"
-                />
-              </div>
-            </>
+          {error && (
+            <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-sm text-rose-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
           )}
-          <div>
-            <label className="text-sm text-gray-400 block mb-2">Email</label>
-            <input
-              type="email"
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
-              placeholder="you@srm.edu.in"
-              required
-            />
-          </div>
-          <div>
-            <label className="text-sm text-gray-400 block mb-2">Password</label>
-            <input
-              type="password"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
-              placeholder="••••••••"
-              required
-              minLength={6}
-            />
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-vibe-purple rounded-xl font-bold mt-4 hover:bg-vibe-purple/80 transition disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1.5 font-medium">Username</label>
+                  <input
+                    value={username} onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
+                    placeholder="coolstudent123"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1.5 font-medium">Full Name</label>
+                  <input
+                    value={fullName} onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
+                    placeholder="Your Name"
+                  />
+                </div>
+              </>
+            )}
+            <div>
+              <label className="text-xs text-gray-500 block mb-1.5 font-medium">Email</label>
+              <input
+                type="email"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
+                placeholder="you@srm.edu.in"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1.5 font-medium">Password</label>
+              <input
+                type="password"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
+                placeholder="••••••••"
+                required
+                minLength={6}
+              />
+            </div>
 
-        <p className="text-center text-gray-400 mt-4 text-sm">
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-vibe-purple hover:underline">
-            {isLogin ? 'Sign Up' : 'Sign In'}
-          </button>
-        </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold mt-2 hover:shadow-lg hover:shadow-violet-900/30 transition-all disabled:opacity-50 text-white"
+            >
+              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+            </button>
+          </form>
+
+          <p className="text-center text-gray-500 mt-5 text-sm">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button onClick={() => setIsLogin(!isLogin)} className="text-violet-400 hover:text-violet-300 transition font-medium">
+              {isLogin ? 'Sign Up' : 'Sign In'}
+            </button>
+          </p>
+        </div>
       </motion.div>
     </div>
   );
@@ -208,49 +225,82 @@ const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
 const Toast = ({ message, type = 'success', onClose }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: 20 }}
-    className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-6 py-4 bg-[#0A0A0F] border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl"
+    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: 20, scale: 0.95 }}
+    className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-6 py-4 glass-card rounded-2xl shadow-2xl"
   >
-    {type === 'success' ? <CheckCircle className="text-green-400 w-5 h-5" /> : <AlertCircle className="text-vibe-rose w-5 h-5" />}
+    <div className={cn(
+      "w-8 h-8 rounded-full flex items-center justify-center",
+      type === 'success' ? "bg-green-500/20" : type === 'error' ? "bg-vibe-rose/20" : "bg-vibe-cyan/20"
+    )}>
+      {type === 'success' ? <CheckCircle className="text-green-400 w-4 h-4" /> :
+        type === 'error' ? <AlertCircle className="text-vibe-rose w-4 h-4" /> :
+          <Zap className="text-vibe-cyan w-4 h-4" />}
+    </div>
     <span className="font-medium text-white">{message}</span>
   </motion.div>
 );
 
-const NavBar = ({ active, setTab }) => (
-  <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/5 bg-[#050507]/50 backdrop-blur-xl">
-    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mb-16 shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-      <Zap className="text-black w-6 h-6 fill-black" />
-    </div>
-    <div className="flex flex-col gap-10">
+const NavBar = ({ active, setTab, currentUser }) => (
+  <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/5 bg-[#030305]/80 backdrop-blur-2xl">
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="w-14 h-14 bg-gradient-to-br from-vibe-purple to-vibe-cyan rounded-2xl flex items-center justify-center mb-16 shadow-[0_0_40px_rgba(124,58,237,0.4)] pulse-ring"
+    >
+      <Zap className="text-white w-7 h-7 fill-white" />
+    </motion.div>
+    <div className="flex flex-col gap-6">
       {[Grid, MapIcon, Users, MessageSquare].map((Icon, i) => {
         const id = ['dashboard', 'map', 'social', 'chat'][i];
+        const labels = ['Home', 'Map', 'Social', 'Chat'];
         return (
-          <button
+          <motion.button
             key={id}
             onClick={() => setTab(id)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className={cn(
-              NAV_ITEM_STYLE,
-              "group",
-              active === id ? NAV_ITEM_ACTIVE : ""
+              "relative p-4 rounded-2xl transition-all duration-300 group",
+              active === id
+                ? "text-white bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10 shadow-[0_0_20px_-5px_rgba(124,58,237,0.5)]"
+                : "text-gray-500 hover:text-white hover:bg-white/5"
             )}
           >
             <Icon className="w-6 h-6" />
             {active === id && (
               <motion.div
-                layoutId="nav-glow"
-                className="absolute inset-0 bg-white/10 rounded-2xl -z-10 blur-xl"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                layoutId="nav-indicator"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-vibe-purple to-vibe-cyan rounded-r-full"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
-          </button>
+            <span className="absolute left-full ml-4 px-3 py-1.5 bg-[#0A0A0F] border border-white/10 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              {labels[i]}
+            </span>
+          </motion.button>
         )
       })}
     </div>
-    <div className="mt-auto">
-      <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden hover:border-white transition-colors cursor-pointer">
-        <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix" alt="User" className="w-full h-full object-cover" />
+    <div className="mt-auto flex flex-col items-center gap-4">
+      <button
+        onClick={() => alert('Settings coming soon! 🚀')}
+        className="p-3 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition"
+        title="Settings"
+      >
+        <Settings className="w-5 h-5" />
+      </button>
+      <div
+        className="w-11 h-11 rounded-full border-2 border-vibe-purple/50 overflow-hidden hover:border-vibe-purple transition-colors cursor-pointer shadow-lg shadow-vibe-purple/20"
+        title={currentUser ? currentUser.username || 'Your Profile' : 'Not signed in'}
+      >
+        <img
+          src={currentUser?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser?.username || currentUser?.email || 'guest'}`}
+          alt="User"
+          className="w-full h-full object-cover"
+        />
       </div>
     </div>
   </nav>
@@ -735,111 +785,388 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
       </div>
       <div className="h-16 flex items-end gap-2">
         {FORECAST.map((h, i) => (
-          <div key={i} className="flex-1 bg-white/10 rounded-t-sm hover:bg-vibe-purple transition flex items-end overflow-hidden group/bar h-full">
-            <div className="w-full bg-white group-hover/bar:bg-white transition-all" style={{ height: `${h}%` }} />
-          </div>
+          <motion.div
+            key={i}
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ delay: i * 0.05 }}
+            className="flex-1 bg-white/5 rounded-t-md hover:bg-gradient-to-t hover:from-vibe-purple/30 hover:to-transparent transition-all flex items-end overflow-hidden group/bar h-full origin-bottom"
+          >
+            <div className="w-full bg-gradient-to-t from-vibe-purple to-vibe-cyan group-hover/bar:from-white group-hover/bar:to-white/80 transition-all rounded-t-sm" style={{ height: `${h}%` }} />
+          </motion.div>
         ))}
       </div>
     </div>
 
     {/* Social */}
     <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE)}>
-      <div className="absolute top-0 right-0 p-32 bg-vibe-cyan/10 blur-3xl rounded-full" />
-      <h3 className="font-display font-bold text-xl mb-4">Study Buddies</h3>
-      <div className="flex -space-x-4 mb-6">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-vibe-cyan/20 to-transparent blur-3xl rounded-full" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-vibe-purple/10 to-transparent blur-2xl rounded-full" />
+      <h3 className="font-display font-bold text-xl mb-4 relative z-10">Study Buddies</h3>
+      <div className="flex -space-x-4 mb-6 relative z-10">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gray-800 relative hover:-translate-y-2 transition-transform cursor-pointer">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-full h-full object-cover" />
-            {i === 2 && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full" />}
-          </div>
+          <motion.div
+            key={i}
+            whileHover={{ y: -8, scale: 1.1 }}
+            className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gray-800 relative cursor-pointer shadow-lg"
+          >
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-full h-full object-cover rounded-full" />
+            {i === 2 && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse" />}
+          </motion.div>
         ))}
-        <div className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-white/10 flex items-center justify-center text-xs font-bold hover:bg-white/20 transition cursor-pointer">
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-xs font-bold cursor-pointer"
+        >
           +5
-        </div>
+        </motion.div>
       </div>
-      <div className="flex gap-4">
-        <button
+      <div className="flex gap-4 relative z-10">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => addNotification("Pinging everyone! 🔔")}
-          className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 transition active:scale-95"
+          className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-xl shadow-lg shadow-white/10"
         >
           Ping All
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => addNotification("Scanning for new vibes... 📡", "info")}
-          className="px-5 py-2.5 bg-white/5 border border-white/10 text-sm font-bold rounded-xl hover:bg-white/10 transition active:scale-95"
+          className="px-5 py-2.5 bg-white/5 border border-white/10 text-sm font-bold rounded-xl hover:bg-white/10 transition"
         >
           Find New
-        </button>
+        </motion.button>
       </div>
     </div>
 
     {/* Gamification */}
-    <div className={cn("col-span-1 md:col-span-3 row-span-2 p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-vibe-purple/20 transition-colors border-vibe-purple/0 hover:border-vibe-purple/50", CARD_STYLE)}>
-      <div className="w-16 h-16 rounded-full bg-vibe-purple/20 flex items-center justify-center text-vibe-purple mb-4 group-hover:scale-110 transition-transform">
-        <Award className="w-8 h-8" />
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className={cn("col-span-1 md:col-span-3 row-span-2 p-6 flex flex-col items-center justify-center text-center cursor-pointer group", CARD_STYLE)}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <motion.div
+        whileHover={{ rotate: 360 }}
+        transition={{ duration: 0.6 }}
+        className="w-20 h-20 rounded-full bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/10 flex items-center justify-center text-vibe-purple mb-4 relative"
+      >
+        <div className="absolute inset-0 rounded-full bg-vibe-purple/20 animate-ping opacity-50" />
+        <Award className="w-10 h-10 relative z-10" />
+      </motion.div>
+      <div className="font-display font-bold text-3xl text-white mb-1">Level 12</div>
+      <div className="text-gray-400 text-sm">Top 5% on VibeSRM</div>
+      <div className="mt-4 flex gap-1">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className={cn("w-2 h-2 rounded-full", i < 4 ? "bg-vibe-purple" : "bg-white/20")} />
+        ))}
       </div>
-      <div className="font-display font-bold text-2xl group-hover:text-white transition-colors">Level 12</div>
-      <div className="text-gray-500 text-sm">Top 5% on VibeSRM</div>
-    </div>
+    </motion.div>
   </main>
 );
 
-const ChatView = () => (
-  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="h-[800px] flex gap-6">
-    <div className={cn("w-1/3 flex flex-col", CARD_STYLE, "p-0")}>
-      <div className="p-6 border-b border-white/5">
-        <h2 className="text-2xl font-display font-bold">Messages</h2>
+const ChatView = ({ currentUser }) => {
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef(null);
+  const [activeChannel, setActiveChannel] = useState('global');
+
+  // Audio refs
+  const sendSound = useRef(new Audio('/sounds/message_sent.mp3'));
+  const receiveSound = useRef(new Audio('/sounds/message_received.mp3'));
+
+  useEffect(() => {
+    sendSound.current.volume = 0.5;
+    receiveSound.current.volume = 0.5;
+  }, []);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    let subscription;
+
+    const initChat = async () => {
+      setLoading(true);
+      try {
+        const data = await chat.getMessages(activeChannel);
+        setMessages(data || []);
+
+        subscription = chat.subscribeToMessages(activeChannel, (newMessage) => {
+          setMessages((prev) => {
+            // Deduplicate
+            if (prev.some(m => m.id === newMessage.id)) return prev;
+
+            // Play receive sound if not from me
+            if (newMessage.sender_id !== currentUser.id) {
+              receiveSound.current.currentTime = 0;
+              receiveSound.current.play().catch(() => { });
+            }
+            return [...prev, newMessage];
+          });
+        });
+      } catch (err) {
+        console.error("Chat Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser) initChat();
+
+    return () => {
+      if (subscription?.unsubscribe) subscription.unsubscribe();
+    };
+  }, [activeChannel, currentUser]);
+
+  const handleSend = async (e) => {
+    e?.preventDefault();
+    if (!inputText.trim()) return;
+
+    const textPayload = inputText.trim();
+    setInputText('');
+
+    // OPTIMISTIC UPDATE
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage = {
+      id: tempId,
+      text: textPayload,
+      sender_id: currentUser.id,
+      created_at: new Date().toISOString(),
+      sender: {
+        username: currentUser.username,
+        avatar_url: currentUser.avatar_url,
+        full_name: currentUser.fullName
+      }
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // Play Sound Immediately
+    try {
+      sendSound.current.currentTime = 0;
+      sendSound.current.play().catch(() => { });
+    } catch (e) { /* ignore */ }
+
+    try {
+      const { data, error } = await chat.sendMessage(textPayload, activeChannel);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to send:", err);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      // Show error toast
+    }
+  };
+
+  if (!currentUser) return (
+    <div className="h-[600px] flex items-center justify-center">
+      <div className="text-center p-10 bg-gradient-to-br from-[#1a1a2e] via-[#16162a] to-[#0f0f1a] rounded-[2.5rem] border border-white/[0.08] shadow-2xl">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center rotate-12">
+          <LogIn className="w-8 h-8 text-white -rotate-12" />
+        </div>
+        <p className="text-gray-300 text-lg font-medium">Join the conversation</p>
+        <p className="text-gray-500 text-sm mt-2">Sign in to start vibing with others</p>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        {CHATS.map(chat => (
-          <div key={chat.id} className="p-4 hover:bg-white/5 cursor-pointer border-b border-white/5 transition flex items-center gap-4">
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-vibe-purple/20 border border-white/10" />
-              {chat.active && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-black" />}
+    </div>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-[calc(100vh-140px)] min-h-[600px] flex gap-5"
+    >
+      {/* Channels Sidebar - Organic Shape */}
+      <div className="w-64 flex-col hidden md:flex rounded-[1.75rem] overflow-hidden bg-gradient-to-b from-[#12121a] to-[#0a0a10] border border-white/[0.04]">
+        <div className="p-5 pb-4">
+          <h2 className="text-base font-semibold text-white/90 tracking-tight">Channels</h2>
+          <p className="text-[11px] text-gray-500 mt-0.5">Pick your vibe</p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-0.5">
+          {['global', 'study-help', 'events', 'random'].map((id, idx) => (
+            <div
+              key={id}
+              onClick={() => setActiveChannel(id)}
+              className={cn(
+                "px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 group",
+                activeChannel === id
+                  ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/10 text-white"
+                  : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]"
+              )}
+            >
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full transition-all",
+                activeChannel === id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
+              )} />
+              <span className="text-[13px] font-medium capitalize">{id.replace('-', ' ')}</span>
+              {activeChannel === id && (
+                <span className="ml-auto text-[9px] bg-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-md font-medium">active</span>
+              )}
             </div>
-            <div className="flex-1">
-              <div className="flex justify-between mb-1">
-                <span className="font-bold">{chat.name}</span>
-                <span className="text-xs text-gray-500">{chat.time}</span>
+          ))}
+        </div>
+        <div className="p-4 border-t border-white/[0.04] bg-black/20">
+          <div className="flex items-center gap-3">
+            {currentUser.avatar_url ? (
+              <img
+                src={currentUser.avatar_url}
+                alt={currentUser.username}
+                className="w-9 h-9 rounded-xl object-cover border border-white/10"
+              />
+            ) : (
+              <img
+                src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username || currentUser.email}`}
+                alt={currentUser.username}
+                className="w-9 h-9 rounded-xl object-cover"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{currentUser.username || currentUser.email?.split('@')[0]}</p>
+              <p className="text-[10px] text-green-500 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Online
+              </p>
+            </div>
+            <button
+              onClick={() => alert('Settings coming soon! 🚀')}
+              className="p-2 rounded-lg hover:bg-white/10 transition text-gray-500 hover:text-white"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chat - Purple/Black/White Gradient */}
+      <div className="flex-1 flex flex-col rounded-[1.75rem] overflow-hidden relative">
+        {/* Stunning Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0c0a1d] to-[#030305]" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-600/20 via-fuchsia-600/10 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-white/[0.03] via-transparent to-transparent blur-2xl" />
+        <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-violet-900/10 rounded-full blur-[100px]" />
+
+        {/* Header - Clean & Minimal */}
+        <div className="relative z-10 px-6 py-4 flex items-center justify-between border-b border-white/[0.06] bg-black/20 backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-900/30 -rotate-3">
+              <span className="text-white font-bold text-lg rotate-3">#</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg text-white capitalize tracking-tight">{activeChannel}</h3>
+              <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-emerald-400">Live</span>
+                <span className="mx-1">·</span>
+                <span>{messages.length} messages</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/10 transition text-gray-400 hover:text-white">
+              <Users className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-5 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <div className="w-10 h-10 border-3 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-gray-500 text-sm">Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-600/20 to-fuchsia-600/10 flex items-center justify-center mb-4 rotate-6">
+                <MessageSquare className="w-10 h-10 text-violet-400 -rotate-6" />
               </div>
-              <p className="text-sm text-gray-400 truncate">{chat.msg}</p>
+              <p className="text-gray-300 font-medium">No messages yet</p>
+              <p className="text-gray-600 text-sm mt-1">Be the first to say something!</p>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
-    <div className={cn("flex-1 flex flex-col", CARD_STYLE, "p-0")}>
-      <div className="p-6 border-b border-white/5 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-vibe-purple" />
-          <div>
-            <h3 className="font-bold">Study Group A</h3>
-            <span className="text-xs text-green-400">● Online</span>
-          </div>
+          ) : (
+            messages.map((msg, idx) => {
+              const isMe = msg.sender_id === currentUser.id;
+              const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
+              const showTime = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15 }}
+                  key={msg.id}
+                  className={cn("flex gap-2.5", isMe ? "flex-row-reverse" : "flex-row")}
+                >
+                  <div className="w-8 flex-shrink-0">
+                    {showAvatar && (
+                      <img
+                        src={msg.sender?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${msg.sender?.username || msg.sender_id}`}
+                        alt={msg.sender?.username || 'User'}
+                        className="w-8 h-8 rounded-xl object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}>
+                    {showAvatar && !isMe && (
+                      <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
+                    )}
+                    <div className={cn(
+                      "px-4 py-2.5 text-[14px] leading-relaxed relative",
+                      isMe
+                        ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
+                        : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
+                    )}>
+                      {msg.text}
+                    </div>
+                    {showTime && (
+                      <span className={cn("text-[10px] text-gray-600 px-1", isMe ? "text-right" : "text-left")}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
         </div>
-        <div className="flex gap-2 text-gray-400">
-          <Phone className="w-5 h-5 cursor-pointer hover:text-white" />
-          <Video className="w-5 h-5 cursor-pointer hover:text-white" />
-          <MoreVertical className="w-5 h-5 cursor-pointer hover:text-white" />
+
+        {/* Input - Floating Style */}
+        <div className="relative z-10 p-4">
+          <form onSubmit={handleSend} className="relative">
+            <div className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-md rounded-2xl border border-white/[0.08] p-1.5 pl-5 shadow-xl shadow-black/20">
+              <input
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                className="flex-1 bg-transparent py-3 outline-none text-white placeholder-gray-500 text-sm"
+                placeholder={`Type a message...`}
+              />
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className={cn(
+                  "p-3.5 rounded-xl transition-all duration-200 flex-shrink-0",
+                  inputText.trim()
+                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-900/30 hover:shadow-violet-900/50 hover:scale-[1.02] active:scale-95"
+                    : "bg-white/[0.05] text-gray-600 cursor-not-allowed"
+                )}
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-      <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
-        <div className="self-start bg-white/5 p-4 rounded-2xl rounded-tl-none max-w-md">
-          <p className="text-sm">Anyone at the library?</p>
-          <span className="text-[10px] text-gray-500 mt-1 block">10:42 AM</span>
-        </div>
-        <div className="self-end bg-vibe-purple/20 p-4 rounded-2xl rounded-tr-none max-w-md">
-          <p className="text-sm text-vibe-purple">Yeah, 3rd floor quiet zone!</p>
-          <span className="text-[10px] text-vibe-purple/60 mt-1 block">10:45 AM</span>
-        </div>
-      </div>
-      <div className="p-4 border-t border-white/5 flex gap-4">
-        <input className="flex-1 bg-white/5 rounded-xl px-4 outline-none focus:bg-white/10 transition" placeholder="Type a message..." />
-        <button className="p-3 bg-vibe-purple rounded-xl hover:bg-vibe-purple/80 transition"><Send className="w-5 h-5" /></button>
-      </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const SocialView = ({ events }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[800px] grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -924,23 +1251,36 @@ export default function App() {
   const [userStats, setUserStats] = useState(null);
 
   // Check for existing token and load user
+  // Supabase Auth Listener
   useEffect(() => {
-    const loadUser = async () => {
-      const token = api.getToken();
-      if (token) {
-        try {
-          const data = await user.getProfile();
-          setCurrentUser(data.user);
-          const stats = await user.getStats();
-          setUserStats(stats);
-        } catch (err) {
-          console.log('Session expired');
-          api.setToken(null);
-        }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        loadUserData();
       }
-    };
-    loadUser();
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        loadUserData();
+      } else {
+        setCurrentUser(null);
+        setUserStats(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserData = async () => {
+    try {
+      const data = await user.getProfile();
+      setCurrentUser(data.user);
+      const stats = await user.getStats();
+      setUserStats(stats);
+    } catch (err) {
+      console.error('Error loading user data:', err);
+    }
+  };
 
   // Load locations from backend
   useEffect(() => {
@@ -1066,7 +1406,7 @@ export default function App() {
         newJoined.delete(locationId);
         setJoined(newJoined);
 
-        addNotification(`Checked out! Earned ${result.coinsEarned} coins 🪙`);
+        addNotification(`Checked out! Earned ${result.coins_earned || 50} coins 🪙`);
 
         // Reload user stats
         try {
@@ -1095,14 +1435,15 @@ export default function App() {
         );
 
         setActiveCheckin({
-          id: result.checkinId,
+          id: result.id,
           locationName: loc.name,
           locationId: loc.id
         });
         setJoined(new Set(joined).add(loc.id));
-        addNotification(`Checked in to ${loc.name}! +${result.coinsEarned} coins 🪙`);
+        addNotification(`Checked in to ${loc.name}! +${result.coins_earned || 20} coins 🪙`);
       } catch (err) {
         // Fallback to local check-in for demo
+        console.error(err);
         setJoined(new Set(joined).add(loc.id));
         addNotification(`Welcome to ${loc.name}!`);
       }
@@ -1134,129 +1475,179 @@ export default function App() {
       case 'social':
         return <SocialView events={eventsData} />;
       case 'chat':
-        return <ChatView />;
+        return <ChatView currentUser={currentUser} />;
       default:
         return <DashboardView locations={locations} events={eventsData} />;
     }
   };
 
   return (
-    <div className="min-h-screen pl-0 lg:pl-28 pr-4 py-4 lg:py-8 font-sans selection:bg-vibe-purple/30">
-      <NavBar active={activeTab} setTab={setActiveTab} />
-
-      {/* Notifications */}
-      <AnimatePresence>
-        {notifications.map(n => (
-          <Toast key={n.id} message={n.msg} type={n.type} />
-        ))}
-      </AnimatePresence>
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
-      <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
-
-      {/* Active Session Banner */}
-      {activeCheckin && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-vibe-purple/90 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center gap-4">
-          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-          <span className="font-medium">Studying at {activeCheckin.locationName}</span>
-          <button
-            onClick={() => handleCheckIn({ id: activeCheckin.locationId })}
-            className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 transition"
-          >
-            End Session
-          </button>
+    <>
+      {/* Animated Background */}
+      <div className="app-background">
+        <div className="aurora" />
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+        <div className="orb orb-4" />
+        <div className="grid-pattern" />
+        <div className="particles">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 20}s`,
+                animationDuration: `${15 + Math.random() * 10}s`
+              }}
+            />
+          ))}
         </div>
-      )}
+        <div className="noise-overlay" />
+      </div>
 
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        <header className="flex justify-between items-end px-4">
-          <div>
-            <h1 className="text-6xl font-display font-bold text-white tracking-tighter mb-2">VibeSRM</h1>
-            <div className="flex items-center gap-3">
-              <p className="text-gray-400 font-medium">Campusing made smart.</p>
-              {backendConnected && (
-                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                  Live
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-6">
-            {/* User Stats */}
-            {currentUser && userStats && (
-              <div className="hidden lg:flex items-center gap-4 px-4 py-2 bg-white/5 rounded-2xl border border-white/10">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-vibe-purple">{userStats.overview?.totalCoins || 0}</div>
-                  <div className="text-[10px] text-gray-400">COINS</div>
-                </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div className="text-center">
-                  <div className="text-lg font-bold text-vibe-cyan">{userStats.overview?.currentStreak || 0}</div>
-                  <div className="text-[10px] text-gray-400">STREAK</div>
-                </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div className="text-center">
-                  <div className="text-lg font-bold text-amber-400">{(userStats.overview?.totalHours || 0).toFixed(1)}h</div>
-                  <div className="text-[10px] text-gray-400">STUDIED</div>
-                </div>
-              </div>
-            )}
+      <div className="min-h-screen pl-0 lg:pl-28 pr-4 py-4 lg:py-8 font-sans selection:bg-vibe-purple/30 relative z-10">
+        <NavBar active={activeTab} setTab={setActiveTab} currentUser={currentUser} />
 
-            <div className="text-right hidden md:block">
-              <div className="text-3xl font-bold font-display">{time}</div>
-              <div className="text-sm text-vibe-purple font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}</div>
-            </div>
+        {/* Notifications */}
+        <AnimatePresence>
+          {notifications.map(n => (
+            <Toast key={n.id} message={n.msg} type={n.type} />
+          ))}
+        </AnimatePresence>
+
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
+        <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
+
+        {/* Active Session Banner */}
+        {activeCheckin && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-vibe-purple/90 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center gap-4 shadow-2xl shadow-vibe-purple/30"
+          >
+            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+            <span className="font-medium">Studying at {activeCheckin.locationName}</span>
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-white text-black font-bold rounded-2xl hover:scale-105 transition flex items-center gap-2"
+              onClick={() => handleCheckIn({ id: activeCheckin.locationId })}
+              className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 transition"
             >
-              <Plus className="w-5 h-5" /> Create Vibe
+              End Session
             </button>
+          </motion.div>
+        )}
 
-            {/* Auth Button */}
-            {currentUser ? (
-              <div className="relative group">
-                <button className="w-12 h-12 rounded-full border-2 border-vibe-purple overflow-hidden hover:scale-105 transition">
-                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} alt="User" className="w-full h-full object-cover" />
-                </button>
-                <div className="absolute right-0 top-14 w-48 bg-[#0A0A0F] border border-white/10 rounded-2xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  <div className="px-3 py-2 border-b border-white/10 mb-2">
-                    <p className="font-bold">{currentUser.fullName || currentUser.username}</p>
-                    <p className="text-xs text-gray-400">{currentUser.email}</p>
-                  </div>
-                  <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 text-vibe-rose">
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </button>
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          <header className="flex justify-between items-center px-4 py-2">
+            <div className="flex items-center gap-5">
+              <motion.div
+                initial={{ opacity: 0, rotate: -12 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                className="w-14 h-14 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-900/30 -rotate-3"
+              >
+                <Zap className="w-7 h-7 text-white rotate-3 fill-white" />
+              </motion.div>
+              <div>
+                <motion.h1
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-4xl font-display font-bold text-white tracking-tight"
+                >
+                  VibeSRM
+                </motion.h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-gray-500 text-sm">Your campus, connected</p>
+                  {backendConnected && (
+                    <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-400 text-[10px] rounded-md flex items-center gap-1 font-medium">
+                      <span className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse" />
+                      Live
+                    </span>
+                  )}
                 </div>
               </div>
-            ) : (
+            </div>
+            <div className="flex items-center gap-6">
+              {/* User Stats */}
+              {currentUser && userStats && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="hidden lg:flex items-center gap-4 px-5 py-3 glass-card rounded-2xl"
+                >
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-vibe-purple">{userStats.overview?.totalCoins || 0}</div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Coins</div>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-vibe-cyan">{userStats.overview?.currentStreak || 0}</div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Streak</div>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-amber-400">{(userStats.overview?.totalHours || 0).toFixed(1)}h</div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Studied</div>
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="text-right hidden md:block">
+                <div className="text-3xl font-bold font-display text-white">{time}</div>
+                <div className="text-sm text-vibe-purple font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}</div>
+              </div>
               <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-6 py-3 bg-vibe-purple text-white font-bold rounded-2xl hover:scale-105 transition flex items-center gap-2"
+                onClick={() => setShowCreateModal(true)}
+                className="px-6 py-3 bg-white text-black font-bold rounded-2xl hover:scale-105 transition flex items-center gap-2 shadow-lg shadow-white/10 btn-glow"
               >
-                <LogIn className="w-5 h-5" /> Sign In
+                <Plus className="w-5 h-5" /> Create Vibe
               </button>
-            )}
 
-            <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-3 right-3 w-2 h-2 bg-vibe-rose rounded-full" />
-            </button>
-          </div>
-        </header>
+              {/* Auth Button */}
+              {currentUser ? (
+                <div className="relative group">
+                  <button className="w-12 h-12 rounded-full border-2 border-vibe-purple overflow-hidden hover:scale-105 transition shadow-lg shadow-vibe-purple/20">
+                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} alt="User" className="w-full h-full object-cover" />
+                  </button>
+                  <div className="absolute right-0 top-14 w-48 glass-card rounded-2xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <div className="px-3 py-2 border-b border-white/10 mb-2">
+                      <p className="font-bold text-white">{currentUser.fullName || currentUser.username}</p>
+                      <p className="text-xs text-gray-400">{currentUser.email}</p>
+                    </div>
+                    <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 text-vibe-rose transition">
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-vibe-purple to-vibe-cyan text-white font-bold rounded-2xl hover:scale-105 transition flex items-center gap-2 shadow-lg shadow-vibe-purple/30"
+                >
+                  <LogIn className="w-5 h-5" /> Sign In
+                </button>
+              )}
 
-        {renderContent()}
+              <button className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition relative">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-3 right-3 w-2 h-2 bg-vibe-rose rounded-full animate-pulse" />
+              </button>
+            </div>
+          </header>
+
+          {renderContent()}
+        </div>
+
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
+        <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
+
+        <div className="fixed bottom-8 right-8 z-[70] space-y-4">
+          {notifications.map(n => (
+            <Toast key={n.id} message={n.msg} type={n.type} onClose={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} />
+          ))}
+        </div>
       </div>
-
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
-      <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
-
-      <div className="fixed bottom-8 right-8 z-[70] space-y-4">
-        {notifications.map(n => (
-          <Toast key={n.id} message={n.msg} type={n.type} onClose={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} />
-        ))}
-      </div>
-    </div>
+    </>
   );
 }

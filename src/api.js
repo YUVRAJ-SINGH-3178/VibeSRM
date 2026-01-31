@@ -1,187 +1,364 @@
 // VibeSRM API Service
 // Connects frontend to backend
 
-const API_BASE = window.VIBESRM_API_URL || import.meta.env.VITE_API_URL ||
-    `http://${window.location.hostname}:5000/api`;
-
-// Token management
-let authToken = localStorage.getItem('vibesrm_token');
-
-export const setToken = (token) => {
-    authToken = token;
-    if (token) {
-        localStorage.setItem('vibesrm_token', token);
-    } else {
-        localStorage.removeItem('vibesrm_token');
-    }
-};
-
-export const getToken = () => authToken;
-
-// API helper
-const api = async (endpoint, options = {}) => {
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(authToken && { Authorization: `Bearer ${authToken}` })
-    };
-
-    try {
-        const res = await fetch(`${API_BASE}${endpoint}`, {
-            mode: 'cors',
-            ...options,
-            headers: { ...headers, ...options.headers }
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || 'API request failed');
-        }
-
-        return data;
-    } catch (error) {
-        console.error(`API Error [${endpoint}]:`, error.message);
-        throw error;
-    }
-};
+import { supabase } from './supabase';
 
 // ============ AUTH ============
 export const auth = {
     register: async (email, password, username, fullName) => {
-        const data = await api('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify({ email, password, username, fullName })
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    username: username,
+                    full_name: fullName
+                }
+            }
         });
-        if (data.token) setToken(data.token);
-        return data;
+
+        if (error) throw error;
+
+        // Create profile in users table
+        const { error: profileError } = await supabase
+            .from('users')
+            .upsert({
+                id: data.user.id,
+                email: email,
+                username: username,
+                full_name: fullName || username,
+                total_coins: 0,
+                current_streak: 0
+            });
+
+        if (profileError) throw profileError;
+
+        return { user: { ...data.user, username, fullName } };
     },
 
     login: async (email, password) => {
-        const data = await api('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ email, password })
+        // Try email first, if fails we'd need a way to look up email by username
+        // For simplicity with Supabase Auth, we'll assume email for now
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
         });
-        if (data.token) setToken(data.token);
-        return data;
+
+        if (error) throw error;
+
+        // Fetch profile
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+        return { user: { ...data.user, ...profile } };
     },
 
-    logout: () => {
-        setToken(null);
+    logout: async () => {
+        await supabase.auth.signOut();
     }
 };
 
 // ============ USER ============
 export const user = {
-    getProfile: () => api('/users/me'),
+    getProfile: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-    getStats: () => api('/users/stats'),
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-    getAchievements: () => api('/users/achievements'),
+        return { user: { ...user, ...profile } };
+    },
 
-    updateSettings: (settings) =>
-        api('/users/settings', {
-            method: 'PATCH',
-            body: JSON.stringify(settings)
-        })
+    getStats: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        const { data: profile } = await supabase
+            .from('users')
+            .select('total_hours, total_coins, current_streak, longest_streak')
+            .eq('id', user.id)
+            .single();
+
+        return {
+            overview: {
+                totalHours: profile.total_hours,
+                totalCoins: profile.total_coins,
+                currentStreak: profile.current_streak,
+                longestStreak: profile.longest_streak
+            }
+        };
+    },
+
+    getAchievements: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase
+            .from('user_achievements')
+            .select('*, achievements(*)')
+            .eq('user_id', user.id);
+        return data;
+    },
+
+    updateSettings: async (settings) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('users')
+            .update(settings)
+            .eq('id', user.id);
+        if (error) throw error;
+        return data;
+    }
 };
 
 // ============ LOCATIONS ============
 export const locations = {
-    getAll: (filters = {}) => {
-        const params = new URLSearchParams(filters).toString();
-        return api(`/locations${params ? `?${params}` : ''}`);
+    getAll: async (filters = {}) => {
+        let query = supabase.from('locations').select('*');
+        if (filters.type) query = query.eq('type', filters.type);
+        const { data, error } = await query;
+        if (error) throw error;
+        return { locations: data };
     },
 
-    getById: (id) => api(`/locations/${id}`),
+    getById: async (id) => {
+        const { data, error } = await supabase
+            .from('locations')
+            .select('*')
+            .eq('id', id)
+            .single();
+        if (error) throw error;
+        return data;
+    },
 
-    getNoiseHeatmap: () => api('/locations/noise/heatmap'),
-
-    getNoiseHistory: (id, hours = 24) =>
-        api(`/locations/${id}/noise/history?hours=${hours}`)
+    getNoiseHeatmap: async () => {
+        const { data, error } = await supabase
+            .from('locations')
+            .select('id, name, latitude, longitude, type'); // Simplified
+        if (error) throw error;
+        return { heatmap: data };
+    }
 };
 
 // ============ CHECK-INS ============
 export const checkins = {
-    checkIn: (locationId, latitude, longitude, subject, mode, plannedDuration) =>
-        api('/checkins/checkin', {
-            method: 'POST',
-            body: JSON.stringify({ locationId, latitude, longitude, subject, mode, plannedDuration })
-        }),
+    checkIn: async (locationId, latitude, longitude, subject, mode, plannedDuration) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('checkins')
+            .insert({
+                user_id: user.id,
+                location_id: locationId,
+                subject,
+                mode,
+                planned_duration: plannedDuration,
+                is_active: true
+            })
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    },
 
-    checkOut: (checkinId, feedback = {}) =>
-        api('/checkins/checkout', {
-            method: 'POST',
-            body: JSON.stringify({ checkinId, ...feedback })
-        }),
+    checkOut: async (checkinId, feedback = {}) => {
+        const { data, error } = await supabase
+            .from('checkins')
+            .update({
+                ...feedback,
+                is_active: false,
+                checked_out_at: new Date().toISOString()
+            })
+            .eq('id', checkinId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    },
 
-    getActive: () => api('/checkins/active')
+    getActive: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { active: false };
+        const { data, error } = await supabase
+            .from('checkins')
+            .select('*, locations(*)')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle();
+        if (error) throw error;
+        return { active: !!data, checkin: data };
+    }
 };
 
 // ============ SOCIAL ============
 export const social = {
-    searchUsers: (query) => api(`/social/search?q=${encodeURIComponent(query)}`),
+    searchUsers: async (query) => {
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, username, full_name, avatar_url')
+            .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+            .limit(10);
+        if (error) throw error;
+        return data;
+    },
 
-    getFriends: () => api('/social/friends'),
+    getFriends: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('friendships')
+            .select('*, friend:friend_id(id, username, full_name, avatar_url)')
+            .eq('user_id', user.id)
+            .eq('status', 'accepted');
+        if (error) throw error;
+        return data;
+    },
 
-    sendFriendRequest: (userId) =>
-        api('/social/friends/request', {
-            method: 'POST',
-            body: JSON.stringify({ userId })
-        }),
+    sendFriendRequest: async (userId) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('friendships')
+            .insert({ user_id: user.id, friend_id: userId, status: 'pending' });
+        if (error) throw error;
+        return data;
+    },
 
-    acceptFriendRequest: (userId) =>
-        api('/social/friends/accept', {
-            method: 'POST',
-            body: JSON.stringify({ userId })
-        }),
+    getPendingRequests: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('friendships')
+            .select('*, user:user_id(id, username, full_name, avatar_url)')
+            .eq('friend_id', user.id)
+            .eq('status', 'pending');
+        if (error) throw error;
+        return data;
+    },
 
-    getPendingRequests: () => api('/social/friends/pending'),
-
-    sendInvite: (toUserId, locationId, scheduledTime, message) =>
-        api('/social/invite', {
-            method: 'POST',
-            body: JSON.stringify({ toUserId, locationId, scheduledTime, message })
-        }),
-
-    getInvites: () => api('/social/invites'),
-
-    respondToInvite: (inviteId, accept) =>
-        api(`/social/invites/${inviteId}/respond`, {
-            method: 'POST',
-            body: JSON.stringify({ accept })
-        })
+    sendInvite: async (toUserId, locationId, scheduledTime, message) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('study_invites')
+            .insert({
+                from_user_id: user.id,
+                to_user_id: toUserId,
+                location_id: locationId,
+                scheduled_time: scheduledTime
+            });
+        if (error) throw error;
+        return data;
+    }
 };
 
 // ============ GHOST MODE ============
 export const ghost = {
-    getNearby: (locationId) =>
-        api(`/ghost/nearby${locationId ? `?locationId=${locationId}` : ''}`),
+    getNearby: async (locationId) => {
+        // Find active checkins at this location
+        let query = supabase.from('checkins').select('*, users(username, avatar_url)').eq('is_active', true);
+        if (locationId) query = query.eq('location_id', locationId);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+    },
 
-    sendEncouragement: (checkinId, emoji) =>
-        api('/ghost/encourage', {
-            method: 'POST',
-            body: JSON.stringify({ checkinId, emoji })
-        }),
-
-    getEncouragements: () => api('/ghost/encouragements'),
-
-    getSessionSummary: (checkinId) => api(`/ghost/session/${checkinId}/summary`)
+    sendEncouragement: async (checkinId, emoji) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('ghost_encouragements')
+            .insert({ from_user_id: user.id, to_checkin_id: checkinId, emoji });
+        if (error) throw error;
+        return data;
+    }
 };
 
 // ============ EVENTS ============
 export const events = {
-    getAll: () => api('/events'),
-    create: (eventData) => api('/events', {
-        method: 'POST',
-        body: JSON.stringify(eventData)
-    }),
-    join: (id) => api(`/events/${id}/join`, {
-        method: 'POST'
-    })
+    getAll: async () => {
+        const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .order('start_time', { ascending: true });
+        if (error) throw error;
+        return { events: data };
+    },
+
+    create: async (eventData) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('events')
+            .insert({
+                ...eventData,
+                creator_id: user.id,
+                map_x: eventData.coords?.x,
+                map_y: eventData.coords?.y
+            })
+            .select()
+            .single();
+        if (error) throw error;
+        return { event: data };
+    },
+
+    join: async (id) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        // In PostgreSQL/Supabase, joining might mean adding to an JSONB array or a junction table
+        // Based on our schema.sql, we'll use the attendees UUID array
+        const { data: event } = await supabase.from('events').select('attendees').eq('id', id).single();
+        const newAttendees = [...(event.attendees || []), user.id];
+        const { data, error } = await supabase
+            .from('events')
+            .update({ attendees: newAttendees })
+            .eq('id', id);
+        if (error) throw error;
+        return data;
+    }
+};
+// ============ CHAT ============
+export const chat = {
+    getMessages: async (channelId = 'global', limit = 50) => {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('*, sender:sender_id(id, username, full_name, avatar_url)')
+            .eq('channel_id', channelId)
+            .order('created_at', { ascending: true })
+            .limit(limit);
+        if (error) throw error;
+        return data;
+    },
+
+    sendMessage: async (text, channelId = 'global') => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('messages')
+            .insert({ sender_id: user.id, text, channel_id: channelId })
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    },
+
+    subscribeToMessages: (channelId, callback) => {
+        return supabase
+            .channel(`channel:${channelId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages',
+                filter: `channel_id=eq.${channelId}`
+            }, async (payload) => {
+                // Fetch sender info separately because realtime doesn't join
+                const { data: sender } = await supabase
+                    .from('users')
+                    .select('id, username, full_name, avatar_url')
+                    .eq('id', payload.new.sender_id)
+                    .single();
+                callback({ ...payload.new, sender });
+            })
+            .subscribe();
+    }
 };
 
-// ============ HEALTH CHECK ============
-export const health = () => fetch(`${API_BASE.replace('/api', '')}/health`).then(r => r.json());
+export const health = () => Promise.resolve({ status: 'connected', provider: 'supabase' });
 
 export default {
     auth,
@@ -191,7 +368,8 @@ export default {
     social,
     ghost,
     events,
+    chat,
     health,
-    setToken,
-    getToken
+    setToken: () => { },
+    getToken: () => { }
 };

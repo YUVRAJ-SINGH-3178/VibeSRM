@@ -129,11 +129,61 @@ CREATE TABLE predictions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add coordinates and extra stats to locations
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS map_x INTEGER;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS map_y INTEGER;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS occupancy_percent INTEGER DEFAULT 0;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS active_users INTEGER DEFAULT 0;
+ALTER TABLE locations ADD COLUMN IF NOT EXISTS avg_noise INTEGER DEFAULT 30;
+
+-- Events Table
+CREATE TABLE IF NOT EXISTS events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    type VARCHAR(50) DEFAULT 'study',
+    location_name VARCHAR(100) NOT NULL,
+    map_x INTEGER NOT NULL,
+    map_y INTEGER NOT NULL,
+    start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP,
+    creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    is_major BOOLEAN DEFAULT false,
+    attendees UUID[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Initial Locations
+INSERT INTO locations (name, type, latitude, longitude, map_x, map_y, capacity, description)
+VALUES 
+('Tech Park Library', 'library', 12.823, 80.044, 650, 465, 500, 'Quiet Zone • Level 3'),
+('Java Lounge', 'cafe', 12.824, 80.045, 950, 250, 150, 'Fresh Brews • Fast WiFi'),
+('Main Tech Park', 'gym', 12.825, 80.046, 250, 670, 200, 'Innovation Center'),
+('Innovation Hub', 'study', 12.826, 80.047, 940, 530, 80, 'Hackathon in progress'),
+('Sports Complex', 'other', 12.827, 80.048, 900, 650, 300, 'Olympic Pool'),
+('Academic Block A', 'study', 12.828, 80.049, 250, 325, 100, 'CSE Dept')
+ON CONFLICT DO NOTHING;
+
 -- Indexes for performance
-CREATE INDEX idx_checkins_user ON checkins(user_id);
-CREATE INDEX idx_checkins_location ON checkins(location_id);
-CREATE INDEX idx_checkins_active ON checkins(is_active);
-CREATE INDEX idx_noise_reports_location ON noise_reports(location_id);
-CREATE INDEX idx_noise_reports_time ON noise_reports(reported_at);
-CREATE INDEX idx_friendships_user ON friendships(user_id);
-CREATE INDEX idx_predictions_location_time ON predictions(location_id, prediction_time);
+-- Messages Table
+CREATE TABLE IF NOT EXISTS public.messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+    channel_id TEXT NOT NULL, -- e.g. 'global', 'study', or a room ID
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_messages_channel ON messages(channel_id);
+CREATE INDEX IF NOT EXISTS idx_messages_time ON messages(created_at);
+
+-- Seed global channel
+-- (No initial messages needed)
+
+CREATE INDEX IF NOT EXISTS idx_checkins_user ON checkins(user_id);
+CREATE INDEX IF NOT EXISTS idx_checkins_location ON checkins(location_id);
+CREATE INDEX IF NOT EXISTS idx_checkins_active ON checkins(is_active);
+CREATE INDEX IF NOT EXISTS idx_events_major ON events(is_major);
+CREATE INDEX IF NOT EXISTS idx_events_time ON events(start_time);

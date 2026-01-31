@@ -6,21 +6,217 @@
   :root {
     --bg-deep: 5 5 10;
     --glass-border: rgba(255, 255, 255, 0.08);
+    --vibe-purple: #7C3AED;
+    --vibe-cyan: #06B6D4;
+    --vibe-rose: #F43F5E;
   }
 
   body {
     @apply bg-[#030305] text-white antialiased overflow-x-hidden font-sans;
-    background-image:
-      radial-gradient(circle at 50% 0%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.05) 0%, transparent 40%);
+    min-height: 100vh;
   }
 }
 
-@layer components {
+/* ========== ANIMATED BACKGROUND ========== */
+.app-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #050507;
+}
 
-  /* Minimal utilities remaining in CSS */
+/* Aurora Effect - Purple/Violet Focus */
+.aurora {
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background:
+    radial-gradient(ellipse 55% 40% at 12% 25%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 88% 18%, rgba(168, 85, 247, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse 40% 45% at 65% 78%, rgba(192, 132, 252, 0.05) 0%, transparent 40%);
+  animation: aurora-shift 35s ease-in-out infinite;
+}
+
+@keyframes aurora-shift {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(2%, -2%) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1%, 3%) rotate(-1deg);
+  }
+
+  75% {
+    transform: translate(-3%, -1%) rotate(2deg);
+  }
+}
+
+/* Mesh Gradient Orbs */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+}
+
+.orb-1 {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+  top: 2%;
+  left: 8%;
+  animation: orb-drift-1 28s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+  top: 58%;
+  right: 8%;
+  animation: orb-drift-2 24s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.18) 0%, transparent 70%);
+  bottom: 12%;
+  left: 25%;
+  animation: orb-drift-3 30s ease-in-out infinite;
+}
+
+.orb-4 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+  top: 38%;
+  left: 55%;
+  animation: orb-drift-4 22s ease-in-out infinite;
+}
+
+@keyframes orb-drift-1 {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(15px, 25px);
+  }
+}
+
+@keyframes orb-drift-2 {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-25px, -18px);
+  }
+}
+
+@keyframes orb-drift-3 {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(20px, -12px);
+  }
+}
+
+@keyframes orb-drift-4 {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-12px, 20px);
+  }
+}
+
+/* Noise Texture Overlay */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Grid Pattern */
+.grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-size: 60px 60px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black, transparent);
+}
+
+/* Floating Particles */
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: particle-float 20s linear infinite;
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+/* ========== COMPONENTS ========== */
+@layer components {
   .text-glow {
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 30px rgba(124, 58, 237, 0.5), 0 0 60px rgba(124, 58, 237, 0.3);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 30px rgba(6, 182, 212, 0.5), 0 0 60px rgba(6, 182, 212, 0.3);
   }
 
   .map-grid {
@@ -29,11 +225,124 @@
       linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   }
+
+  /* Premium Card Style - Organic */
+  .glass-card {
+    background: linear-gradient(135deg, rgba(12, 12, 18, 0.7) 0%, rgba(8, 8, 12, 0.6) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow:
+      0 0 0 1px rgba(139, 92, 246, 0.02) inset,
+      0 8px 32px -8px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-card-hover {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card-hover:hover {
+    background: linear-gradient(135deg, rgba(18, 18, 26, 0.75) 0%, rgba(12, 12, 18, 0.65) 100%);
+    border-color: rgba(139, 92, 246, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(139, 92, 246, 0.05) inset,
+      0 12px 40px -8px rgba(0, 0, 0, 0.5),
+      0 0 60px -20px rgba(139, 92, 246, 0.1);
+    transform: translateY(-3px);
+  }
+
+  /* Glow Button */
+  .btn-glow {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(90deg, var(--vibe-purple), var(--vibe-cyan), var(--vibe-purple));
+    background-size: 200% 100%;
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s;
+    animation: glow-shift 3s linear infinite;
+  }
+
+  .btn-glow:hover::before {
+    opacity: 1;
+  }
+
+  @keyframes glow-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    100% {
+      background-position: 200% 50%;
+    }
+  }
+
+  /* Shimmer Effect */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: shimmer 3s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      left: -100%;
+    }
+
+    100% {
+      left: 200%;
+    }
+  }
+
+  /* Pulse Ring */
+  .pulse-ring {
+    position: relative;
+  }
+
+  .pulse-ring::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 2px solid var(--vibe-purple);
+    opacity: 0;
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.5;
+    }
+
+    100% {
+      transform: scale(1.3);
+      opacity: 0;
+    }
+  }
 }
 
-/* Scrollbar */
+/* ========== SCROLLBAR ========== */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -43,4 +352,37 @@
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ========== SELECTION ========== */
+::selection {
+  background: rgba(124, 58, 237, 0.4);
+  color: white;
+}
+
+/* ========== FOCUS STATES ========== */
+*:focus-visible {
+  outline: 2px solid var(--vibe-purple);
+  outline-offset: 2px;
+}
+
+/* ========== LOADING STATES ========== */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
