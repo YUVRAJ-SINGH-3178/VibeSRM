@@ -865,12 +865,45 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
   </div>
 );
 
-const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
+const CreateVibeModal = ({ isOpen, onClose, onCreate, locations }) => {
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
   const [type, setType] = useState('study');
+  const [isMajor, setIsMajor] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState('');
+
+  // Location coordinates mapping
+  const locationCoords = {
+    'Academic Block': { x: 250, y: 325 },
+    'Library': { x: 650, y: 465 },
+    'Cafeteria': { x: 950, y: 250 },
+    'Sports Complex': { x: 900, y: 650 },
+    'Tech Park': { x: 250, y: 670 },
+    'Innovation Hub': { x: 940, y: 530 }
+  };
 
   if (!isOpen) return null;
+
+  const handleCreate = () => {
+    if (name && desc) {
+      const coords = locationCoords[selectedLocation] || { x: 600, y: 450 };
+      onCreate({
+        name,
+        desc,
+        type,
+        isMajor,
+        locationName: selectedLocation || 'Campus',
+        coords
+      });
+      // Reset form
+      setName('');
+      setDesc('');
+      setType('study');
+      setIsMajor(false);
+      setSelectedLocation('');
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -902,6 +935,23 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
               placeholder="Who's invited?"
             />
           </div>
+
+          {/* Location Selector */}
+          <div>
+            <label className="text-sm text-gray-400 block mb-2">Location</label>
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition text-white"
+            >
+              <option value="">Select a location...</option>
+              {Object.keys(locationCoords).map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Type Selector */}
           <div className="grid grid-cols-3 gap-2">
             {['study', 'chill', 'event'].map(t => (
               <button
@@ -917,14 +967,30 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
             ))}
           </div>
 
+          {/* Major/Minor Toggle */}
+          <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+            <div>
+              <p className="font-bold text-white">Show on Map</p>
+              <p className="text-xs text-gray-400">Major events appear on the campus map</p>
+            </div>
+            <button
+              onClick={() => setIsMajor(!isMajor)}
+              className={cn(
+                "w-14 h-8 rounded-full transition-colors relative",
+                isMajor ? "bg-vibe-purple" : "bg-white/10"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 w-6 h-6 bg-white rounded-full transition-all",
+                isMajor ? "left-7" : "left-1"
+              )} />
+            </button>
+          </div>
+
           <button
-            onClick={() => {
-              if (name && desc) {
-                onCreate({ name, desc, type });
-                onClose();
-              }
-            }}
-            className="w-full py-4 bg-vibe-purple rounded-xl font-bold mt-4 hover:bg-vibe-purple/80 transition"
+            onClick={handleCreate}
+            disabled={!name || !desc}
+            className="w-full py-4 bg-vibe-purple rounded-xl font-bold mt-4 hover:bg-vibe-purple/80 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Launch Vibe 🚀
           </button>
@@ -936,178 +1002,294 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
 
 // --- View Components ---
 
-const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification }) => (
-  <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-6 gap-6 h-auto md:h-[800px]">
-    {/* Map */}
-    <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <BentoMap locations={locations} events={events} selected={selectedLoc} onSelect={setSelectedLoc} />
-      <AnimatePresence>
-        {selectedLoc && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="absolute bottom-6 left-6 p-6 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-3xl w-80 shadow-2xl"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-bold font-display">{selectedLoc.name}</h3>
-              <button onClick={() => setSelectedLoc(null)} className="p-1 hover:bg-white/10 rounded-full"><X className="w-4 h-4" /></button>
-            </div>
-            <p className="text-sm text-gray-400 mb-4">{selectedLoc.desc}</p>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                <div className={cn("h-full w-[0%] transition-all duration-1000", selectedLoc.color.replace('text', 'bg'))} style={{ width: `${selectedLoc.occupancy}%` }} />
-              </div>
-              <span className="text-xs font-bold">{selectedLoc.occupancy}%</span>
-            </div>
-            <button
-              onClick={() => handleCheckIn(selectedLoc)}
-              className={cn(
-                "w-full py-3 font-bold rounded-xl transition",
-                joined.has(selectedLoc.id)
-                  ? "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"
-                  : "bg-white text-black hover:bg-gray-200"
-              )}
+const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification, currentUser, onJoin, onLeave, onDelete }) => {
+  const [activeListTab, setActiveListTab] = useState('vibes'); // 'locations' | 'vibes'
+
+  const filteredEvents = events?.filter(e =>
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.description.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  return (
+    <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-6 gap-6 h-auto md:h-[800px]">
+      {/* Map */}
+      <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <BentoMap locations={locations} events={events} selected={selectedLoc} onSelect={setSelectedLoc} />
+        <AnimatePresence>
+          {selectedLoc && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="absolute bottom-6 left-6 p-6 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-3xl w-80 shadow-2xl"
             >
-              {joined.has(selectedLoc.id) ? "Check Out" : "Check In"}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-
-    {/* Search & List */}
-    <div className="col-span-1 md:col-span-4 row-span-4 flex flex-col gap-6">
-      <div className={cn("p-4 flex items-center gap-4 text-gray-400 focus-within:text-white transition-colors", CARD_STYLE)}>
-        <Search className="w-5 h-5" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Find friends, food, vibes..."
-          className="bg-transparent outline-none w-full placeholder:text-gray-600 font-medium"
-        />
-      </div>
-
-      <div className={cn("flex-1 p-6 overflow-y-auto", CARD_STYLE)}>
-        <h3 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> Live Vibes
-        </h3>
-        <div className="space-y-4">
-          {filteredLocations.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">No vibes found :(</div>
-          ) : (
-            filteredLocations.map(loc => (
-              <div
-                key={loc.id}
-                onClick={() => setSelectedLoc(loc)}
-                className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer group border border-transparent hover:border-white/5"
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold flex items-center gap-2">
-                    {loc.name}
-                    {joined.has(loc.id) && <CheckCircle className="w-4 h-4 text-green-400" />}
-                  </span>
-                  <span className={cn("text-xs font-mono px-2 py-1 rounded bg-black/30", loc.occupancy > 80 ? 'text-red-400' : 'text-green-400')}>
-                    {loc.occupancy}%
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">{loc.desc}</p>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-xl font-bold font-display">{selectedLoc.name || selectedLoc.title}</h3>
+                <button onClick={() => setSelectedLoc(null)} className="p-1 hover:bg-white/10 rounded-full"><X className="w-4 h-4" /></button>
               </div>
-            ))
+              <p className="text-sm text-gray-400 mb-4">{selectedLoc.desc || selectedLoc.description}</p>
+
+              {selectedLoc.type !== 'study' && selectedLoc.type !== 'chill' && selectedLoc.type !== 'event' ? (
+                // Location Actions
+                <>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className={cn("h-full w-[0%] transition-all duration-1000", selectedLoc.color?.replace('text', 'bg') || 'bg-gray-500')} style={{ width: `${selectedLoc.occupancy || 0}%` }} />
+                    </div>
+                    <span className="text-xs font-bold">{selectedLoc.occupancy || 0}%</span>
+                  </div>
+                  <button
+                    onClick={() => handleCheckIn(selectedLoc)}
+                    className={cn(
+                      "w-full py-3 font-bold rounded-xl transition",
+                      joined.has(selectedLoc.id)
+                        ? "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"
+                        : "bg-white text-black hover:bg-gray-200"
+                    )}
+                  >
+                    {joined.has(selectedLoc.id) ? "Check Out" : "Check In"}
+                  </button>
+                </>
+              ) : (
+                // Event Actions
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{selectedLoc.locationName || 'Campus'}</span>
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{new Date(selectedLoc.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Join/Leave Button */}
+                    <button
+                      onClick={() => {
+                        const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
+                        if (isJoined) onLeave(selectedLoc.id);
+                        else onJoin(selectedLoc.id);
+                      }}
+                      className={cn(
+                        "py-2 font-bold rounded-xl text-sm transition",
+                        selectedLoc.attendees?.includes(currentUser?.id)
+                          ? "bg-red-500/20 text-red-400 border border-red-500/50"
+                          : "bg-vibe-purple text-white"
+                      )}
+                    >
+                      {selectedLoc.attendees?.includes(currentUser?.id) ? "Leave" : "Join"}
+                    </button>
+
+                    {/* Message Button */}
+                    <button
+                      onClick={() => addNotification('Opening chat... (Feature coming soon!)', 'info')}
+                      className="py-2 bg-white/10 text-white font-bold rounded-xl text-sm hover:bg-white/20 transition"
+                    >
+                      Message
+                    </button>
+                  </div>
+
+                  {/* Delete Button (Creator Only) */}
+                  {selectedLoc.creator_id === currentUser?.id && (
+                    <button
+                      onClick={() => onDelete(selectedLoc.id)}
+                      className="w-full py-2 border border-red-500/20 text-red-400 text-xs rounded-xl hover:bg-red-500/10 transition"
+                    >
+                      Delete Vibe
+                    </button>
+                  )}
+                </div>
+              )}
+            </motion.div>
           )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Search & List */}
+      <div className="col-span-1 md:col-span-4 row-span-4 flex flex-col gap-6">
+        <div className={cn("p-4 flex flex-col gap-4 transition-colors", CARD_STYLE)}>
+          <div className="flex items-center gap-4 text-gray-400 focus-within:text-white">
+            <Search className="w-5 h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Find friends, food, vibes..."
+              className="bg-transparent outline-none w-full placeholder:text-gray-600 font-medium"
+            />
+          </div>
+          {/* Tabs */}
+          <div className="flex p-1 bg-black/40 rounded-xl">
+            <button
+              onClick={() => setActiveListTab('locations')}
+              className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition", activeListTab === 'locations' ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300")}
+            >
+              Locations
+            </button>
+            <button
+              onClick={() => setActiveListTab('vibes')}
+              className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition", activeListTab === 'vibes' ? "bg-vibe-purple text-white" : "text-gray-500 hover:text-gray-300")}
+            >
+              Live Vibes
+            </button>
+          </div>
+        </div>
+
+        <div className={cn("flex-1 p-6 overflow-y-auto", CARD_STYLE)}>
+          <h3 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
+            <div className={cn("w-2 h-2 rounded-full animate-pulse", activeListTab === 'vibes' ? "bg-vibe-purple" : "bg-green-500")} />
+            {activeListTab === 'vibes' ? 'Happening Now' : 'Campus Locations'}
+          </h3>
+          <div className="space-y-4">
+            {activeListTab === 'locations' ? (
+              filteredLocations.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">No locations found</div>
+              ) : (
+                filteredLocations.map(loc => (
+                  <div
+                    key={loc.id}
+                    onClick={() => setSelectedLoc(loc)}
+                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer group border border-transparent hover:border-white/5"
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold flex items-center gap-2">
+                        {loc.name}
+                        {joined.has(loc.id) && <CheckCircle className="w-4 h-4 text-green-400" />}
+                      </span>
+                      <span className={cn("text-xs font-mono px-2 py-1 rounded bg-black/30", loc.occupancy > 80 ? 'text-red-400' : 'text-green-400')}>
+                        {loc.occupancy}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">{loc.desc}</p>
+                  </div>
+                ))
+              )
+            ) : (
+              // Events List
+              filteredEvents.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">No vibes yet. Create one! 🚀</div>
+              ) : (
+                filteredEvents.map(event => (
+                  <div
+                    key={event.id}
+                    onClick={() => setSelectedLoc({ ...event, type: 'event' })}
+                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer group border border-transparent hover:border-vibe-purple/20"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <span className="font-bold flex items-center gap-2 text-vibe-purple">
+                          {event.title}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-gray-400 bg-black/20 px-1.5 py-0.5 rounded">{event.locationName}</span>
+                          <span className="text-xs text-gray-500">{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+                      {event.isMajor && <Zap className="w-4 h-4 text-amber-400 fill-amber-400/20" />}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">{event.description}</p>
+
+                    {/* Mini Actions */}
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+                      {event.attendees?.includes(currentUser?.id) ? (
+                        <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Joined</span>
+                      ) : (
+                        <span className="text-xs text-gray-500">Tap to view & join</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Stats */}
-    <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 flex flex-col justify-between", CARD_STYLE)}>
-      <div>
-        <h3 className="text-gray-400 text-sm font-medium mb-1">Weekly Streak</h3>
-        <div className="text-4xl font-display font-bold">12hrs <span className="text-lg text-gray-500 font-normal">studying</span></div>
+      {/* Stats */}
+      <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 flex flex-col justify-between", CARD_STYLE)}>
+        <div>
+          <h3 className="text-gray-400 text-sm font-medium mb-1">Weekly Streak</h3>
+          <div className="text-4xl font-display font-bold">12hrs <span className="text-lg text-gray-500 font-normal">studying</span></div>
+        </div>
+        <div className="h-16 flex items-end gap-2">
+          {FORECAST.map((h, i) => (
+            <motion.div
+              key={i}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ delay: i * 0.05 }}
+              className="flex-1 bg-white/5 rounded-t-md hover:bg-gradient-to-t hover:from-vibe-purple/30 hover:to-transparent transition-all flex items-end overflow-hidden group/bar h-full origin-bottom"
+            >
+              <div className="w-full bg-gradient-to-t from-vibe-purple to-vibe-cyan group-hover/bar:from-white group-hover/bar:to-white/80 transition-all rounded-t-sm" style={{ height: `${h}%` }} />
+            </motion.div>
+          ))}
+        </div>
       </div>
-      <div className="h-16 flex items-end gap-2">
-        {FORECAST.map((h, i) => (
+
+      {/* Social */}
+      <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE)}>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-vibe-cyan/20 to-transparent blur-3xl rounded-full" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-vibe-purple/10 to-transparent blur-2xl rounded-full" />
+        <h3 className="font-display font-bold text-xl mb-4 relative z-10">Study Buddies</h3>
+        <div className="flex -space-x-4 mb-6 relative z-10">
+          {[1, 2, 3, 4].map(i => (
+            <motion.div
+              key={i}
+              whileHover={{ y: -8, scale: 1.1 }}
+              className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gray-800 relative cursor-pointer shadow-lg"
+            >
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-full h-full object-cover rounded-full" />
+              {i === 2 && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse" />}
+            </motion.div>
+          ))}
           <motion.div
-            key={i}
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ delay: i * 0.05 }}
-            className="flex-1 bg-white/5 rounded-t-md hover:bg-gradient-to-t hover:from-vibe-purple/30 hover:to-transparent transition-all flex items-end overflow-hidden group/bar h-full origin-bottom"
+            whileHover={{ scale: 1.1 }}
+            className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-xs font-bold cursor-pointer"
           >
-            <div className="w-full bg-gradient-to-t from-vibe-purple to-vibe-cyan group-hover/bar:from-white group-hover/bar:to-white/80 transition-all rounded-t-sm" style={{ height: `${h}%` }} />
+            +5
           </motion.div>
-        ))}
-      </div>
-    </div>
-
-    {/* Social */}
-    <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE)}>
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-vibe-cyan/20 to-transparent blur-3xl rounded-full" />
-      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-vibe-purple/10 to-transparent blur-2xl rounded-full" />
-      <h3 className="font-display font-bold text-xl mb-4 relative z-10">Study Buddies</h3>
-      <div className="flex -space-x-4 mb-6 relative z-10">
-        {[1, 2, 3, 4].map(i => (
-          <motion.div
-            key={i}
-            whileHover={{ y: -8, scale: 1.1 }}
-            className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gray-800 relative cursor-pointer shadow-lg"
+        </div>
+        <div className="flex gap-4 relative z-10">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => addNotification("Pinging everyone! 🔔")}
+            className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-xl shadow-lg shadow-white/10"
           >
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-full h-full object-cover rounded-full" />
-            {i === 2 && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse" />}
-          </motion.div>
-        ))}
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-xs font-bold cursor-pointer"
-        >
-          +5
-        </motion.div>
+            Ping All
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => addNotification("Scanning for new vibes... 📡", "info")}
+            className="px-5 py-2.5 bg-white/5 border border-white/10 text-sm font-bold rounded-xl hover:bg-white/10 transition"
+          >
+            Find New
+          </motion.button>
+        </div>
       </div>
-      <div className="flex gap-4 relative z-10">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => addNotification("Pinging everyone! 🔔")}
-          className="px-5 py-2.5 bg-white text-black text-sm font-bold rounded-xl shadow-lg shadow-white/10"
-        >
-          Ping All
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => addNotification("Scanning for new vibes... 📡", "info")}
-          className="px-5 py-2.5 bg-white/5 border border-white/10 text-sm font-bold rounded-xl hover:bg-white/10 transition"
-        >
-          Find New
-        </motion.button>
-      </div>
-    </div>
 
-    {/* Gamification */}
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className={cn("col-span-1 md:col-span-3 row-span-2 p-6 flex flex-col items-center justify-center text-center cursor-pointer group", CARD_STYLE)}
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Gamification */}
       <motion.div
-        whileHover={{ rotate: 360 }}
-        transition={{ duration: 0.6 }}
-        className="w-20 h-20 rounded-full bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/10 flex items-center justify-center text-vibe-purple mb-4 relative"
+        whileHover={{ scale: 1.02 }}
+        className={cn("col-span-1 md:col-span-3 row-span-2 p-6 flex flex-col items-center justify-center text-center cursor-pointer group", CARD_STYLE)}
       >
-        <div className="absolute inset-0 rounded-full bg-vibe-purple/20 animate-ping opacity-50" />
-        <Award className="w-10 h-10 relative z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <motion.div
+          whileHover={{ rotate: 360 }}
+          transition={{ duration: 0.6 }}
+          className="w-20 h-20 rounded-full bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/10 flex items-center justify-center text-vibe-purple mb-4 relative"
+        >
+          <div className="absolute inset-0 rounded-full bg-vibe-purple/20 animate-ping opacity-50" />
+          <Award className="w-10 h-10 relative z-10" />
+        </motion.div>
+        <div className="font-display font-bold text-3xl text-white mb-1">Level 12</div>
+        <div className="text-gray-400 text-sm">Top 5% on VibeSRM</div>
+        <div className="mt-4 flex gap-1">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className={cn("w-2 h-2 rounded-full", i < 4 ? "bg-vibe-purple" : "bg-white/20")} />
+          ))}
+        </div>
       </motion.div>
-      <div className="font-display font-bold text-3xl text-white mb-1">Level 12</div>
-      <div className="text-gray-400 text-sm">Top 5% on VibeSRM</div>
-      <div className="mt-4 flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className={cn("w-2 h-2 rounded-full", i < 4 ? "bg-vibe-purple" : "bg-white/20")} />
-        ))}
-      </div>
-    </motion.div>
-  </main>
-);
+    </main>
+  );
+};
 
 const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) => {
   const [messages, setMessages] = useState([]);
@@ -1625,10 +1807,10 @@ export default function App() {
         title: data.name,
         description: data.desc,
         type: data.type,
-        location_name: 'Community Hub',
+        location_name: data.locationName || 'Campus',
         start_time: new Date().toISOString(),
-        coords: { x: Math.floor(200 + Math.random() * 800), y: Math.floor(150 + Math.random() * 600) },
-        is_major: true
+        coords: data.coords || { x: 600, y: 450 },
+        is_major: data.isMajor || false
       });
 
       if (res.event) {
@@ -1638,6 +1820,61 @@ export default function App() {
     } catch (err) {
       console.error(err);
       addNotification(err.message || "Failed to create vibe", "error");
+    }
+  };
+
+  // Join event handler
+  const handleJoinEvent = async (eventId) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      addNotification("Please sign in to join vibes!", "error");
+      return;
+    }
+
+    try {
+      const res = await events.join(eventId);
+      if (res.alreadyJoined) {
+        addNotification("You've already joined this vibe!", "info");
+      } else if (res.joined) {
+        // Update local state
+        setEventsData(prev => prev.map(e =>
+          e.id === eventId ? mapEvent(res.event) : e
+        ));
+        addNotification("Joined the vibe! 🎉");
+      }
+    } catch (err) {
+      console.error(err);
+      addNotification(err.message || "Failed to join vibe", "error");
+    }
+  };
+
+  // Leave event handler
+  const handleLeaveEvent = async (eventId) => {
+    try {
+      const res = await events.leave(eventId);
+      if (res.left) {
+        setEventsData(prev => prev.map(e =>
+          e.id === eventId ? mapEvent(res.event) : e
+        ));
+        addNotification("Left the vibe");
+      }
+    } catch (err) {
+      console.error(err);
+      addNotification(err.message || "Failed to leave vibe", "error");
+    }
+  };
+
+  // Delete event handler
+  const handleDeleteEvent = async (eventId) => {
+    try {
+      const res = await events.delete(eventId);
+      if (res.deleted) {
+        setEventsData(prev => prev.filter(e => e.id !== eventId));
+        addNotification("Vibe deleted successfully");
+      }
+    } catch (err) {
+      console.error(err);
+      addNotification(err.message || "Failed to delete vibe", "error");
     }
   };
 
@@ -1755,6 +1992,10 @@ export default function App() {
           setSearchQuery={setSearchQuery}
           filteredLocations={filteredLocations}
           addNotification={addNotification}
+          currentUser={currentUser}
+          onJoin={handleJoinEvent}
+          onLeave={handleLeaveEvent}
+          onDelete={handleDeleteEvent}
         />;
       case 'map':
         return <FullMapView locations={locations} events={eventsData} selected={selectedLoc} onSelect={setSelectedLoc} />;
