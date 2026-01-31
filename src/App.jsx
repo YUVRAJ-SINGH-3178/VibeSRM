@@ -31,7 +31,11 @@ import {
   Sun,
   Globe,
   Wifi,
-  MapPin
+  MapPin,
+  Paperclip,
+  Smile,
+  Mic,
+  Image as ImageIcon
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -1583,21 +1587,19 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
   const activeChannelLabel = channelList.find((ch) => ch.id === activeChannel)?.label || activeChannel;
-
-  // Check if this is a custom channel (dm or event) that can be left
-  const isCustomChannel = activeChannel?.startsWith('dm-') || activeChannel?.startsWith('event-');
-  const isDefaultChannel = DEFAULT_CHAT_CHANNELS.some(ch => ch.id === activeChannel);
+  const isCustom = activeChannel?.startsWith('dm-') || activeChannel?.startsWith('event-');
 
   // Audio refs
   const sendSound = useRef(new Audio('/sounds/message_sent.mp3'));
   const receiveSound = useRef(new Audio('/sounds/message_received.mp3'));
 
   useEffect(() => {
-    sendSound.current.volume = 0.5;
-    receiveSound.current.volume = 0.5;
+    sendSound.current.volume = 0.4;
+    receiveSound.current.volume = 0.4;
   }, []);
 
   const scrollToBottom = () => {
@@ -1610,25 +1612,17 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
 
   useEffect(() => {
     let subscription;
-
     const initChat = async () => {
       setLoading(true);
       try {
         const data = await chat.getMessages(activeChannel);
         setMessages(data || []);
-
         subscription = chat.subscribeToMessages(activeChannel, (message) => {
           setMessages((prev) => {
-            // Deduplicate
             if (prev.some(m => m.id === message.id)) return prev;
-
-            // Play receive sound if not from me
             if (message.sender_id !== currentUser.id) {
               receiveSound.current.currentTime = 0;
               receiveSound.current.play().catch(() => { });
-              const sender = message.sender?.username || message.sender?.full_name || 'Someone';
-              const category = activeChannel === 'global' ? 'global-chat' : 'chat';
-              addNotificationItem?.(`Chat • ${activeChannelLabel}: ${sender} — ${message.text}`, 'info', category);
             }
             return [...prev, message];
           });
@@ -1639,300 +1633,248 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
         setLoading(false);
       }
     };
-
     if (currentUser) initChat();
-
-    return () => {
-      if (subscription?.unsubscribe) subscription.unsubscribe();
-    };
+    return () => { if (subscription?.unsubscribe) subscription.unsubscribe(); };
   }, [activeChannel, currentUser]);
 
   const handleSend = async (e) => {
     e?.preventDefault();
     if (!inputText.trim()) return;
-
-    const textPayload = inputText.trim();
+    const text = inputText.trim();
     setInputText('');
 
-    // OPTIMISTIC UPDATE
+    // Quick vibration on mobile
+    if (navigator.vibrate) navigator.vibrate(5);
+    inputRef.current?.focus();
+
     const tempId = `temp-${Date.now()}`;
-    const optimisticMessage = {
-      id: tempId,
-      text: textPayload,
-      sender_id: currentUser.id,
+    const optimisticMsg = {
+      id: tempId, text: text, sender_id: currentUser.id,
       created_at: new Date().toISOString(),
-      sender: {
-        username: currentUser.username,
-        avatar_url: currentUser.avatar_url,
-        full_name: currentUser.full_name || currentUser.fullName
-      }
+      sender: { username: currentUser.username, avatar_url: currentUser.avatar_url }
     };
 
-    setMessages(prev => [...prev, optimisticMessage]);
-
-    // Play Sound Immediately
+    setMessages(prev => [...prev, optimisticMsg]);
     try {
       sendSound.current.currentTime = 0;
       sendSound.current.play().catch(() => { });
-    } catch (e) { /* ignore */ }
-
-    try {
-      const { data, error } = await chat.sendMessage(textPayload, activeChannel);
-      if (error) throw error;
+      await chat.sendMessage(text, activeChannel);
     } catch (err) {
-      console.error("Failed to send:", err);
+      console.error("Failed:", err);
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      // Show error toast
+      addNotification?.('Failed to deliver', 'error');
     }
   };
 
   if (!currentUser) return (
-    <div className="h-[600px] flex items-center justify-center">
-      <div className="text-center p-10 bg-gradient-to-br from-[#1a1a2e] via-[#16162a] to-[#0f0f1a] rounded-[2.5rem] border border-white/[0.08] shadow-2xl">
-        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center rotate-12">
-          <LogIn className="w-8 h-8 text-white -rotate-12" />
+    <div className="h-[600px] flex items-center justify-center relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030014]">
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150"></div>
+      <div className="z-10 text-center p-12 bg-black/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl">
+        <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.5)]">
+          <LogIn className="w-8 h-8 text-white" />
         </div>
-        <p className="text-gray-300 text-lg font-medium">Join the conversation</p>
-        <p className="text-gray-500 text-sm mt-2">Sign in to start vibing with others</p>
+        <h3 className="text-3xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2">Connect to Vibe</h3>
+        <p className="text-gray-400">Sign in to unlock the campus network.</p>
       </div>
     </div>
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="h-[calc(100vh-140px)] min-h-[600px] flex gap-5"
-    >
-      {/* Channels Sidebar - Organic Shape */}
-      <div className="w-64 flex-col hidden md:flex rounded-[1.75rem] overflow-hidden bg-gradient-to-b from-[#12121a] to-[#0a0a10] border border-white/[0.04]">
-        <div className="p-5 pb-4">
-          <h2 className="text-base font-semibold text-white/90 tracking-tight">Channels</h2>
-          <p className="text-[11px] text-gray-500 mt-0.5">Pick your vibe</p>
+    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-[calc(100vh-140px)] min-h-[600px] flex gap-6 font-sans">
+
+      {/* SIDEBAR: Frosted Glass Panel */}
+      <div className="w-80 hidden md:flex flex-col rounded-[2.5rem] bg-[#0b0b15]/60 backdrop-blur-xl border border-white/[0.08] shadow-2xl overflow-hidden relative group">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+
+        {/* Sidebar Header */}
+        <div className="p-6 pb-2 relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-display font-bold text-white tracking-tight flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <MessageSquare className="w-5 h-5 text-white" />
+              </div>
+              Chat
+            </h2>
+            <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition text-gray-400 hover:text-white">
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="relative group/search">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500 group-focus-within/search:text-violet-400 transition-colors" />
+            <input
+              placeholder="Filter channels..."
+              className="w-full bg-[#151520] border border-white/5 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-500/50 focus:bg-[#1a1a25] transition-all"
+            />
+          </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-0.5">
+
+        {/* Channel List */}
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 custom-scrollbar relative z-10">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-4 py-2 mt-2">vibe channels</p>
           {channelList.map((channel) => {
-            const isCustom = channel.id?.startsWith('dm-') || channel.id?.startsWith('event-');
+            const isActive = activeChannel === channel.id;
+            const isPrivate = channel.id?.startsWith('dm-');
+
             return (
-              <div
+              <motion.div
                 key={channel.id}
+                onClick={() => setActiveChannel(channel.id)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 group relative",
-                  activeChannel === channel.id
-                    ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/10 text-white"
-                    : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]"
+                  "relative px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 flex items-center gap-3 group overflow-hidden",
+                  isActive
+                    ? "bg-gradient-to-br from-violet-600/90 to-indigo-700/90 text-white shadow-[0_8px_20px_-5px_rgba(124,58,237,0.4)]"
+                    : "hover:bg-white/[0.05] text-gray-400 hover:text-gray-200"
                 )}
               >
-                <span className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all",
-                  activeChannel === channel.id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
-                )} />
-                <span
-                  className="text-[13px] font-medium flex-1"
-                  onClick={() => setActiveChannel(channel.id)}
-                >
-                  {channel.label}
-                </span>
-                {activeChannel === channel.id && (
-                  <span className="text-[9px] bg-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-md font-medium">active</span>
+                {isActive && (
+                  <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
                 )}
-                {isCustom && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLeaveChannel?.(channel.id);
-                    }}
-                    className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-vibe-rose hover:bg-vibe-rose/10"
-                    title="Leave this chat"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
+
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold backdrop-blur-sm transition-all border",
+                  isActive
+                    ? "bg-white/20 text-white border-white/30"
+                    : "bg-[#1a1a22] text-gray-500 border-white/5 group-hover:bg-[#252530] group-hover:text-gray-300"
+                )}>
+                  {isPrivate ? <Users className="w-4 h-4" /> : '#'}
+                </div>
+
+                <div className="flex-1 min-w-0 relative z-10">
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className={cn("font-bold truncate text-[15px]", isActive ? "text-white" : "text-gray-300")}>{channel.label}</span>
+                    {isActive && <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />}
+                  </div>
+                  <div className={cn("text-xs truncate", isActive ? "text-indigo-100" : "text-gray-600")}>
+                    {isActive ? "Active Now" : "Click to join"}
+                  </div>
+                </div>
+              </motion.div>
             );
           })}
         </div>
-        <div className="p-4 border-t border-white/[0.04] bg-black/20">
-          <div className="flex items-center gap-3">
-            {currentUser.avatar_url ? (
-              <img
-                src={currentUser.avatar_url}
-                alt={currentUser.username}
-                className="w-9 h-9 rounded-xl object-cover border border-white/10"
-              />
-            ) : (
-              <img
-                src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username || currentUser.email}`}
-                alt={currentUser.username}
-                className="w-9 h-9 rounded-xl object-cover"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{currentUser.username || currentUser.email?.split('@')[0]}</p>
-              <p className="text-[10px] text-green-500 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Online
-              </p>
+
+        {/* User Stats Card */}
+        <div className="p-4 relative z-10 bg-black/20 border-t border-white/5 backdrop-blur-xl">
+          <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-white/5 group bg-[#0f0f15]">
+            <div className="relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-full opacity-0 group-hover:opacity-100 transition duration-500 blur-sm"></div>
+              <img src={currentUser.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} className="relative w-10 h-10 rounded-full object-cover bg-black" alt="me" />
             </div>
-            <button
-              onClick={() => alert('Settings coming soon! 🚀')}
-              className="p-2 rounded-lg hover:bg-white/10 transition text-gray-500 hover:text-white"
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-bold text-white truncate">{currentUser.username}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                <p className="text-[10px] text-emerald-500 font-medium">Online</p>
+              </div>
+            </div>
+            <Settings className="w-4 h-4 text-gray-500 hover:text-white transition cursor-pointer" />
           </div>
         </div>
       </div>
 
-      {/* Main Chat - Purple/Black/White Gradient */}
-      <div className="flex-1 flex flex-col rounded-[1.75rem] overflow-hidden relative">
-        {/* Stunning Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0c0a1d] to-[#030305]" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-bl from-violet-600/20 via-fuchsia-600/10 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tr from-white/[0.03] via-transparent to-transparent blur-2xl" />
-        <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-violet-900/10 rounded-full blur-[100px]" />
+      {/* CHAT AREA: The Stage */}
+      <div className="flex-1 flex flex-col rounded-[2.5rem] bg-[#05050A] relative overflow-hidden shadow-2xl border border-white/10 group">
+        {/* Ambient Lighting Background */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none mix-blend-screen" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-fuchsia-600/5 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
 
-        {/* Header - Clean & Minimal */}
-        <div className="relative z-10 px-6 py-4 flex items-center justify-between border-b border-white/[0.06] bg-black/20 backdrop-blur-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-900/30 -rotate-3">
-              <span className="text-white font-bold text-lg rotate-3">{isCustomChannel ? '💬' : '#'}</span>
+        {/* Chat Header - Floating Glass Bar */}
+        <div className="absolute top-6 left-6 right-6 z-30">
+          <div className="px-6 py-4 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl flex justify-between items-center shadow-lg">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-inner">
+                <span className="text-xl">{isCustom ? '💬' : '#'}</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  {activeChannelLabel}
+                </h2>
+                <p className="text-xs text-gray-400 flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]" />
+                  {messages.length} messages
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-lg text-white tracking-tight">{activeChannelLabel}</h3>
-              <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                <span className="text-emerald-400">Live</span>
-                <span className="mx-1">·</span>
-                <span>{messages.length} messages</span>
-              </p>
+            <div className="flex items-center gap-1 bg-black/20 p-1 rounded-2xl border border-white/5">
+              {[Phone, Video, MoreVertical].map((Icon, i) => (
+                <button key={i} className="p-2.5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition">
+                  <Icon className="w-4.5 h-4.5" />
+                </button>
+              ))}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/10 transition text-gray-400 hover:text-white">
-              <Users className="w-4 h-4" />
-            </button>
-            {isCustomChannel && (
-              <button
-                onClick={() => onLeaveChannel?.(activeChannel)}
-                className="p-2.5 rounded-xl bg-vibe-rose/10 hover:bg-vibe-rose/20 transition text-vibe-rose hover:text-vibe-rose/80"
-                title="Leave this chat"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Messages Area */}
-        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-5 space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+        {/* Messages Scroll Area */}
+        <div className="flex-1 overflow-y-auto px-6 pt-32 pb-4 space-y-6 custom-scrollbar relative z-10" onClick={() => setToggledMsgId(null)}>
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3">
-              <div className="w-10 h-10 border-3 border-violet-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-gray-500 text-sm">Loading messages...</p>
+            <div className="h-full flex items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin"></div>
+                <p className="text-gray-500 text-sm font-medium animate-pulse">Syncing frequencies...</p>
+              </div>
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-600/20 to-fuchsia-600/10 flex items-center justify-center mb-4 rotate-6">
-                <MessageSquare className="w-10 h-10 text-violet-400 -rotate-6" />
+            <div className="h-full flex items-center justify-center text-center">
+              <div className="max-w-xs p-8 rounded-[3rem] bg-white/[0.02] border border-white/5 backdrop-blur-md">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center shadow-inner">
+                  <MessageSquare className="w-8 h-8 text-gray-600" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">It's quiet... too quiet</h3>
+                <p className="text-gray-500">Kickstart the vibe in #{activeChannelLabel}!</p>
               </div>
-              <p className="text-gray-300 font-medium">No messages yet</p>
-              <p className="text-gray-600 text-sm mt-1">Be the first to say something!</p>
             </div>
           ) : (
             messages.map((msg, idx) => {
               const isMe = msg.sender_id === currentUser.id;
               const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
-              const showTime = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
 
               return (
                 <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.2 }}
                   key={msg.id}
-                  className={cn("flex gap-2.5", isMe ? "flex-row-reverse" : "flex-row")}
+                  className={cn("flex group/msg", isMe ? "justify-end" : "justify-start")}
                 >
-                  <div className="w-8 flex-shrink-0">
-                    {showAvatar && (
-                      <img
-                        src={msg.sender?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${msg.sender?.username || msg.sender_id}`}
-                        alt={msg.sender?.username || 'User'}
-                        className="w-8 h-8 rounded-xl object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}>
-                    {showAvatar && !isMe && (
-                      <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
-                    )}
-                    <div className={cn(
-                      "px-4 py-2.5 text-[14px] leading-relaxed relative cursor-pointer",
-                      isMe
-                        ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
-                        : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
-                    )}
-                      onClick={(e) => { e.stopPropagation(); setToggledMsgId(prev => prev === msg.id ? null : msg.id); }}
-                      onDoubleClick={(e) => { e.stopPropagation(); /* reserved for future */ }}
-                    >
-                      {msg.text}
-
-                      {/* Toggle actions: Copy always, Delete only for own messages */}
-                      {toggledMsgId === msg.id && (
-                        <div className="absolute -top-8 right-0 flex items-center gap-2">
-                          <button
-                            onClick={(ev) => {
-                              ev.stopPropagation();
-                              try {
-                                navigator.clipboard.writeText(msg.text);
-                                addNotification?.('Message copied', 'success');
-                              } catch (err) {
-                                console.error('Copy failed', err);
-                                addNotification?.('Copy failed', 'error');
-                              }
-                              setToggledMsgId(null);
-                            }}
-                            className="bg-white/5 hover:bg-white/10 text-gray-200 px-2 py-1 rounded-md text-xs"
-                          >Copy</button>
-                          {isMe && (
-                            <button
-                              onClick={async (ev) => {
-                                ev.stopPropagation();
-                                // If optimistic (temp) id, remove locally
-                                if (String(msg.id).startsWith('temp-')) {
-                                  setMessages(prev => prev.filter(m => m.id !== msg.id));
-                                  addNotification?.('Message removed', 'info');
-                                  setToggledMsgId(null);
-                                  return;
-                                }
-
-                                // Optimistically remove message from UI
-                                const prior = messages;
-                                setMessages(prev => prev.filter(m => m.id !== msg.id));
-                                setToggledMsgId(null);
-
-                                try {
-                                  await chat.deleteMessage(msg.id);
-                                  addNotification?.('Message deleted', 'success');
-                                } catch (err) {
-                                  // Restore previous state on failure and show detailed error
-                                  console.error('Delete failed', err);
-                                  setMessages(prior);
-                                  const errMsg = err?.message || err?.error || JSON.stringify(err);
-                                  addNotification?.(`Delete failed: ${errMsg}`, 'error');
-                                }
-                              }}
-                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md text-xs"
-                            >Delete</button>
-                          )}
-                        </div>
-                      )}
+                  <div className={cn("flex max-w-[75%] gap-3", isMe ? "flex-row-reverse" : "flex-row")}>
+                    {/* Avatar */}
+                    <div className="w-9 flex-shrink-0 flex flex-col justify-end">
+                      {showAvatar && !isMe ? (
+                        <img src={msg.sender?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${msg.sender?.username}`} className="w-9 h-9 rounded-2xl object-cover bg-black border border-white/10 shadow-lg" alt="Use" />
+                      ) : <div className="w-9" />}
                     </div>
-                    {showTime && (
-                      <span className={cn("text-[10px] text-gray-600 px-1", isMe ? "text-right" : "text-left")}>
+
+                    <div className={cn("flex flex-col gap-1", isMe ? "items-end" : "items-start")}>
+                      {showAvatar && !isMe && <span className="ml-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider">{msg.sender?.username}</span>}
+
+                      {/* Bubble */}
+                      <div
+                        onClick={(e) => { e.stopPropagation(); setToggledMsgId(prev => prev === msg.id ? null : msg.id); }}
+                        className={cn(
+                          "relative px-5 py-3.5 text-[15px] leading-relaxed cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg",
+                          isMe
+                            ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-indigo-700 text-white rounded-[24px] rounded-tr-md shadow-[0_4px_15px_rgba(79,70,229,0.3)] border border-indigo-400/20"
+                            : "bg-[#181820]/90 backdrop-blur-xl text-gray-100 rounded-[24px] rounded-tl-md border border-white/10 shadow-sm"
+                        )}
+                      >
+                        {msg.text}
+
+                        {/* Actions Menu */}
+                        {toggledMsgId === msg.id && (
+                          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={cn("absolute -top-12 flex bg-[#1a1a24] border border-white/10 p-1.5 rounded-xl shadow-2xl z-50", isMe ? "right-0" : "left-0")}>
+                            <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.text); setToggledMsgId(null); }} className="hover:bg-white/10 p-2 rounded-lg text-white" title="Copy"><Paperclip className="w-3.5 h-3.5" /></button>
+                            {isMe && <button onClick={async (e) => { e.stopPropagation(); await chat.deleteMessage(msg.id); setMessages(p => p.filter(m => m.id !== msg.id)); setToggledMsgId(null); }} className="hover:bg-red-500/20 text-red-400 p-2 rounded-lg ml-1" title="Delete"><X className="w-3.5 h-3.5" /></button>}
+                          </motion.div>
+                        )}
+                      </div>
+                      <span className={cn("text-[10px] font-medium opacity-0 group-hover/msg:opacity-100 transition-opacity", isMe ? "text-indigo-300/60 mr-2" : "text-gray-600 ml-2")}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                    )}
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -1941,31 +1883,47 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input - Floating Style */}
-        <div className="relative z-10 p-4">
-          <form onSubmit={handleSend} className="relative">
-            <div className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-md rounded-2xl border border-white/[0.08] p-1.5 pl-5 shadow-xl shadow-black/20">
-              <input
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                className="flex-1 bg-transparent py-3 outline-none text-white placeholder-gray-500 text-sm"
-                placeholder={`Type a message...`}
-              />
-              <button
-                type="submit"
-                disabled={!inputText.trim()}
-                className={cn(
-                  "p-3.5 rounded-xl transition-all duration-200 flex-shrink-0",
-                  inputText.trim()
-                    ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-violet-900/30 hover:shadow-violet-900/50 hover:scale-[1.02] active:scale-95"
-                    : "bg-white/[0.05] text-gray-600 cursor-not-allowed"
+        {/* FLOATING COMMAND INPUT */}
+        <div className="absolute bottom-6 left-6 right-6 z-30">
+          <form onSubmit={handleSend} className="relative group/input">
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-[2rem] opacity-0 group-focus-within/input:opacity-20 blur-xl transition-opacity duration-500"></div>
+            <div className={cn(
+              "relative flex items-end gap-3 bg-[#0c0c12]/80 backdrop-blur-2xl p-2.5 pl-5 rounded-[2rem] border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all duration-300",
+              inputText.trim() ? "border-violet-500/40" : "border-white/10"
+            )}>
+              <button type="button" className="pb-3 text-gray-400 hover:text-white transition"><Plus className="w-6 h-6" /></button>
+
+              <div className="flex-1 py-3">
+                <input
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  placeholder={`Message #${activeChannelLabel}...`}
+                  className="w-full bg-transparent border-none outline-none text-white placeholder-gray-500 text-[16px] font-medium"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pr-1 pb-1">
+                {!inputText.trim() && (
+                  <button type="button" className="p-2.5 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition"><Mic className="w-5 h-5" /></button>
                 )}
-              >
-                <Send className="w-5 h-5" />
-              </button>
+                <button
+                  type="submit"
+                  disabled={!inputText.trim()}
+                  className={cn(
+                    "p-3 rounded-full transition-all duration-300 flex items-center justify-center",
+                    inputText.trim()
+                      ? "bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-600/30 rotate-0 scale-100"
+                      : "bg-white/5 text-gray-600 -rotate-90 scale-90 opacity-0 w-0 p-0 overflow-hidden"
+                  )}
+                >
+                  <Send className="w-5 h-5 ml-0.5" />
+                </button>
+              </div>
             </div>
           </form>
         </div>
+
       </div>
     </motion.div>
   );
@@ -2228,90 +2186,185 @@ const AchievementsView = ({ userStats }) => {
   );
 };
 
-const SocialView = ({ events, onChatWith, onJoinEvent, onOpenEventChat, currentUser }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[800px] grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div className={cn("col-span-2 p-8", CARD_STYLE)}>
-      <h2 className="text-3xl font-display font-bold mb-6">Your Squad</h2>
-      <div className="grid grid-cols-2 gap-4">
-        {SQUAD_MEMBERS.map(member => (
-          <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member.seed}`} className="w-14 h-14 rounded-full border-2 border-white/10" />
-            <div>
-              <h4 className="font-bold">{member.name}</h4>
-              <p className="text-xs text-gray-400">{member.status}</p>
+const SocialView = ({ events, onChatWith, onJoinEvent, onOpenEventChat, currentUser }) => {
+  const [filter, setFilter] = useState('all');
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-[800px] grid grid-cols-1 md:grid-cols-12 gap-6 pb-20"
+    >
+      {/* Main Feed Area */}
+      <div className="md:col-span-8 flex flex-col gap-6 h-full overflow-y-auto pr-2 custom-scrollbar">
+
+        {/* Header Hero */}
+        <div className="relative rounded-[2.5rem] bg-gradient-to-r from-violet-900/40 to-fuchsia-900/40 border border-white/10 p-8 overflow-hidden group">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 mix-blend-overlay" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/30 blur-[80px] rounded-full group-hover:bg-violet-600/40 transition-colors duration-700" />
+
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-bold text-violet-300 uppercase tracking-wider backdrop-blur-md">Community Pulse</span>
+              <span className="flex items-center gap-1.5 text-xs font-bold text-green-400"><span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> 1,204 Online</span>
             </div>
-            <button
-              onClick={() => onChatWith?.(member)}
-              className="ml-auto px-4 py-2 bg-white text-black text-xs font-bold rounded-lg hover:scale-105 transition"
+            <h2 className="text-4xl font-display font-bold text-white mb-4 leading-tight">
+              What's vibing on <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">Campus today?</span>
+            </h2>
+            <div className="flex gap-3 mt-6">
+              {['Trending', 'Near Me', 'Friends', 'Music'].map((tag) => (
+                <button key={tag} className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/20 transition text-sm font-medium text-gray-300 hover:text-white backdrop-blur-sm">
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Squad Grid */}
+        <div>
+          <div className="flex justify-between items-end mb-4 px-2">
+            <h3 className="text-xl font-display font-bold text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-vibe-cyan" /> Your Squad
+            </h3>
+            <button className="text-xs text-gray-500 hover:text-white transition">View All</button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {SQUAD_MEMBERS.map((member, i) => (
+              <motion.div
+                key={member.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative p-4 rounded-[2rem] bg-[#0c0c12] border border-white/5 hover:border-violet-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-900/10"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+
+                <div className="relative flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute -inset-1 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-full opacity-0 group-hover:opacity-100 blur-sm transition-opacity" />
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member.seed}`} className="relative w-14 h-14 rounded-full border-2 border-[#0c0c12] bg-gray-800" alt={member.name} />
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#0c0c12] rounded-full" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-white text-base truncate group-hover:text-violet-300 transition-colors">{member.name}</h4>
+                    <p className="text-xs text-gray-500 truncate">{member.status || "Vibing..."}</p>
+                    <div className="flex gap-1 mt-1.5">
+                      {['🎨', '🎮', '🎵'].slice(0, 2).map((emoji, k) => (
+                        <span key={k} className="w-5 h-5 flex items-center justify-center bg-white/5 rounded-md text-[10px]">{emoji}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => onChatWith?.(member)}
+                    className="w-10 h-10 rounded-xl bg-white/5 hover:bg-violet-600 hover:text-white text-gray-400 flex items-center justify-center transition-all shadow-lg hover:shadow-violet-600/30"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Find New Friends Card */}
+            <motion.div
+              className="p-4 rounded-[2rem] border border-dashed border-white/10 hover:border-white/20 hover:bg-white/5 flex flex-col items-center justify-center text-center cursor-pointer transition group"
+              whileHover={{ scale: 1.02 }}
             >
-              Chat
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-    <div className={cn("p-8 overflow-y-auto", CARD_STYLE)}>
-      <h2 className="text-xl font-display font-bold mb-6">Campus Events</h2>
-      <div className="space-y-4">
-        {events?.map((event, i) => (
-          <div key={event._id || i} className="p-4 rounded-xl border border-white/10 hover:border-vibe-purple/50 transition cursor-pointer group bg-white/5">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-bold">{event.title}</span>
-              <span className={cn("text-[10px] px-2 py-1 rounded",
-                event.isMajor ? "bg-amber-500/20 text-amber-500" : "bg-vibe-cyan/20 text-vibe-cyan"
-              )}>
-                {event.isMajor ? 'MAJOR' : event.type.toUpperCase()}
-              </span>
-            </div>
-            <p className="text-sm text-gray-400 mb-1">{event.description}</p>
-            <p className="text-xs text-vibe-purple mb-3">📍 {event.locationName}</p>
-            <div className="flex justify-between items-center">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map(j => <div key={j} className="w-6 h-6 rounded-full bg-gray-600 border border-black" />)}
-                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] border border-black">+{Math.floor(Math.random() * 50)}</div>
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:bg-vibe-cyan group-hover:text-black transition-colors mb-2">
+                <Search className="w-5 h-5" />
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const isJoined = event.attendees?.includes(currentUser?.id);
-                    if (isJoined) return;
-                    onJoinEvent?.(event.id);
-                  }}
-                  className={cn(
-                    "text-xs font-bold transition",
-                    event.attendees?.includes(currentUser?.id)
-                      ? "text-green-400 cursor-default"
-                      : "text-white hover:text-vibe-purple"
-                  )}
-                >
-                  {event.attendees?.includes(currentUser?.id) ? "Joined" : "Join Event →"}
-                </button>
-                <button
-                  onClick={() => {
-                    const isJoined = event.attendees?.includes(currentUser?.id);
-                    if (!isJoined) return;
-                    onOpenEventChat?.(event);
-                  }}
-                  className={cn(
-                    "text-[11px] px-2 py-1 rounded-md transition",
-                    event.attendees?.includes(currentUser?.id)
-                      ? "bg-white/10 text-white hover:bg-white/20"
-                      : "bg-white/5 text-gray-500 cursor-not-allowed"
-                  )}
-                >
-                  Chat
-                </button>
-              </div>
-            </div>
+              <p className="text-sm font-bold text-gray-300">Discover People</p>
+              <p className="text-xs text-gray-600">Based on your interests</p>
+            </motion.div>
           </div>
-        ))}
-        {(!events || events.length === 0) && (
-          <div className="text-center text-gray-500 py-10">No upcoming events.</div>
-        )}
+        </div>
+
       </div>
-    </div>
-  </motion.div>
-);
+
+      {/* Right Sidebar: Events */}
+      <div className="md:col-span-4 h-full flex flex-col">
+        <div className="flex justify-between items-end mb-4 px-1">
+          <h3 className="text-xl font-display font-bold text-white">Upcoming Events</h3>
+          <button className="text-xs text-vibe-purple hover:text-white transition">Calendar</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+          {(!events || events.length === 0) ? (
+            <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 text-center">
+              <p className="text-gray-500">No events yet.</p>
+            </div>
+          ) : events.map((event, i) => (
+            <motion.div
+              key={event.id || i}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="group relative p-5 rounded-[2rem] bg-[#101016] border border-white/5 hover:border-white/10 overflow-hidden"
+            >
+              {/* Background Image Effect */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-[4rem] opacity-50 group-hover:scale-110 transition-transform duration-500" />
+
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-3">
+                  <div className={cn(
+                    "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border",
+                    event.isMajor
+                      ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                      : "bg-vibe-cyan/10 text-vibe-cyan border-vibe-cyan/20"
+                  )}>
+                    {event.type}
+                  </div>
+                  {event.isMajor && (
+                    <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  )}
+                </div>
+
+                <h4 className="text-lg font-bold text-white mb-1 group-hover:text-vibe-purple transition-colors">{event.title}</h4>
+
+                <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+                  <MapPin className="w-3.5 h-3.5" /> {event.locationName}
+                  <span className="w-1 h-1 rounded-full bg-gray-600" />
+                  <span>{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const isJoined = event.attendees?.includes(currentUser?.id);
+                      if (isJoined) return;
+                      onJoinEvent?.(event.id);
+                    }}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95",
+                      event.attendees?.includes(currentUser?.id)
+                        ? "bg-green-500/10 text-green-400 border border-green-500/20 cursor-default"
+                        : "bg-white text-black hover:bg-gray-200"
+                    )}
+                  >
+                    {event.attendees?.includes(currentUser?.id) ? "Going ✓" : "Join Event"}
+                  </button>
+
+                  {event.attendees?.includes(currentUser?.id) && (
+                    <button
+                      onClick={() => onOpenEventChat?.(event)}
+                      className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white transition border border-white/5"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const SettingsView = ({ currentUser, onLogout, onUpdateProfile }) => {
   const [subTab, setSubTab] = useState('account');
