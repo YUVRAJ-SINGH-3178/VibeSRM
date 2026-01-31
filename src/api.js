@@ -477,3 +477,20 @@ export default {
     setToken: () => { },
     getToken: () => { }
 };
+
+// Delete a message (only allowed for message author)
+chat.deleteMessage = async (messageId) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId)
+        .eq('sender_id', user.id)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+};
