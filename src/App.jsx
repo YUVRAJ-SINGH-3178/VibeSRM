@@ -77,6 +77,22 @@ const INITIAL_LOCATIONS = [
 
 const FORECAST = [50, 75, 90, 60, 45, 30, 80];
 
+const DEFAULT_CHAT_CHANNELS = [
+  { id: 'global', label: 'Global' },
+  { id: 'study-help', label: 'Study Help' },
+  { id: 'events', label: 'Events' },
+  { id: 'random', label: 'Random' }
+];
+
+const SQUAD_MEMBERS = [
+  { id: 'riya', name: 'Riya Sharma', status: 'in the gym', seed: 'riya' },
+  { id: 'arjun', name: 'Arjun Mehta', status: 'chilling at cafe', seed: 'arjun' },
+  { id: 'neha', name: 'Neha Kapoor', status: 'playing tennis', seed: 'neha' },
+  { id: 'kabir', name: 'Kabir Singh', status: 'at the library', seed: 'kabir' },
+  { id: 'anaya', name: 'Anaya Iyer', status: 'heading to the track', seed: 'anaya' },
+  { id: 'rohan', name: 'Rohan Verma', status: 'studying in Tech Park', seed: 'rohan' }
+];
+
 const CHATS = [
   { id: 1, name: "Study Group A", msg: "Anyone at the library?", time: "2m", active: true },
   { id: 2, name: "Gym Bros", msg: "Leg day lets gooo", time: "1h", active: false },
@@ -866,12 +882,14 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
   </main>
 );
 
-const ChatView = ({ currentUser }) => {
+const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
-  const [activeChannel, setActiveChannel] = useState('global');
+
+  const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
+  const activeChannelLabel = channelList.find((ch) => ch.id === activeChannel)?.label || activeChannel;
 
   // Audio refs
   const sendSound = useRef(new Audio('/sounds/message_sent.mp3'));
@@ -990,23 +1008,23 @@ const ChatView = ({ currentUser }) => {
           <p className="text-[11px] text-gray-500 mt-0.5">Pick your vibe</p>
         </div>
         <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-0.5">
-          {['global', 'study-help', 'events', 'random'].map((id, idx) => (
+          {channelList.map((channel) => (
             <div
-              key={id}
-              onClick={() => setActiveChannel(id)}
+              key={channel.id}
+              onClick={() => setActiveChannel(channel.id)}
               className={cn(
                 "px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 group",
-                activeChannel === id
+                activeChannel === channel.id
                   ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/10 text-white"
                   : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]"
               )}
             >
               <span className={cn(
                 "w-1.5 h-1.5 rounded-full transition-all",
-                activeChannel === id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
+                activeChannel === channel.id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
               )} />
-              <span className="text-[13px] font-medium capitalize">{id.replace('-', ' ')}</span>
-              {activeChannel === id && (
+              <span className="text-[13px] font-medium">{channel.label}</span>
+              {activeChannel === channel.id && (
                 <span className="ml-auto text-[9px] bg-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-md font-medium">active</span>
               )}
             </div>
@@ -1059,7 +1077,7 @@ const ChatView = ({ currentUser }) => {
               <span className="text-white font-bold text-lg rotate-3">#</span>
             </div>
             <div>
-              <h3 className="font-semibold text-lg text-white capitalize tracking-tight">{activeChannel}</h3>
+              <h3 className="font-semibold text-lg text-white tracking-tight">{activeChannelLabel}</h3>
               <p className="text-[11px] text-gray-500 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                 <span className="text-emerald-400">Live</span>
@@ -1168,19 +1186,24 @@ const ChatView = ({ currentUser }) => {
   );
 };
 
-const SocialView = ({ events }) => (
+const SocialView = ({ events, onChatWith }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[800px] grid grid-cols-1 md:grid-cols-3 gap-6">
     <div className={cn("col-span-2 p-8", CARD_STYLE)}>
       <h2 className="text-3xl font-display font-bold mb-6">Your Squad</h2>
       <div className="grid grid-cols-2 gap-4">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer">
-            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-14 h-14 rounded-full border-2 border-white/10" />
+        {SQUAD_MEMBERS.map(member => (
+          <div key={member.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition">
+            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member.seed}`} className="w-14 h-14 rounded-full border-2 border-white/10" />
             <div>
-              <h4 className="font-bold">User {i}</h4>
-              <p className="text-xs text-gray-400"> studying at Library</p>
+              <h4 className="font-bold">{member.name}</h4>
+              <p className="text-xs text-gray-400">{member.status}</p>
             </div>
-            <button className="ml-auto px-4 py-2 bg-white text-black text-xs font-bold rounded-lg hover:scale-105 transition">Wave 👋</button>
+            <button
+              onClick={() => onChatWith?.(member)}
+              className="ml-auto px-4 py-2 bg-white text-black text-xs font-bold rounded-lg hover:scale-105 transition"
+            >
+              Chat
+            </button>
           </div>
         ))}
       </div>
@@ -1249,6 +1272,8 @@ export default function App() {
   const [activeCheckin, setActiveCheckin] = useState(null);
   const [backendConnected, setBackendConnected] = useState(false);
   const [userStats, setUserStats] = useState(null);
+  const [activeChannel, setActiveChannel] = useState('global');
+  const [dmChannels, setDmChannels] = useState([]);
 
   // Check for existing token and load user
   // Supabase Auth Listener
@@ -1454,6 +1479,24 @@ export default function App() {
     return locations.filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase()) || l.desc.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [locations, searchQuery]);
 
+  const chatChannels = useMemo(() => {
+    const merged = [...DEFAULT_CHAT_CHANNELS, ...dmChannels];
+    const seen = new Set();
+    return merged.filter((ch) => {
+      if (seen.has(ch.id)) return false;
+      seen.add(ch.id);
+      return true;
+    });
+  }, [dmChannels]);
+
+  const handleChatWith = (member) => {
+    const channelId = `dm-${member.id}`;
+    const channelLabel = member.name;
+    setDmChannels((prev) => (prev.some((ch) => ch.id === channelId) ? prev : [...prev, { id: channelId, label: channelLabel }]));
+    setActiveChannel(channelId);
+    setActiveTab('chat');
+  };
+
   // Main Content Router
   const renderContent = () => {
     switch (activeTab) {
@@ -1473,9 +1516,9 @@ export default function App() {
       case 'map':
         return <FullMapView locations={locations} events={eventsData} selected={selectedLoc} onSelect={setSelectedLoc} />;
       case 'social':
-        return <SocialView events={eventsData} />;
+        return <SocialView events={eventsData} onChatWith={handleChatWith} />;
       case 'chat':
-        return <ChatView currentUser={currentUser} />;
+        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} />;
       default:
         return <DashboardView locations={locations} events={eventsData} />;
     }
