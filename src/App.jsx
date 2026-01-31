@@ -29,6 +29,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import api, { auth, locations as locationsApi, checkins, user, social, ghost, events, chat } from './api.js';
 import { supabase } from './supabase';
+import Logo from './Logo.png';
 
 // --- Utilities ---
 function cn(...inputs) {
@@ -247,63 +248,63 @@ const ProfileModal = ({ isOpen, onClose, currentUser, onSave }) => {
           </div>
         ) : (
           <div className="space-y-6">
-          <div>
-            <label className="text-sm text-gray-400">Name</label>
-            <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
-              placeholder="Your name"
-            />
-          </div>
+            <div>
+              <label className="text-sm text-gray-400">Name</label>
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
+                placeholder="Your name"
+              />
+            </div>
 
-          <div>
-            <label className="text-sm text-gray-400">Year of study</label>
-            <select
-              value={yearOfStudy}
-              onChange={(e) => setYearOfStudy(e.target.value)}
-              className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
-            >
-              <option value="" className="bg-[#0A0A0F]">Select year</option>
-              {YEAR_OPTIONS.map((y) => (
-                <option key={y} value={y} className="bg-[#0A0A0F]">{y}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label className="text-sm text-gray-400">Year of study</label>
+              <select
+                value={yearOfStudy}
+                onChange={(e) => setYearOfStudy(e.target.value)}
+                className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
+              >
+                <option value="" className="bg-[#0A0A0F]">Select year</option>
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y} className="bg-[#0A0A0F]">{y}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="text-sm text-gray-400">Interests</label>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {INTEREST_OPTIONS.map((label) => {
-                const active = interests.includes(label);
-                return (
-                  <button
-                    key={label}
-                    onClick={() => toggleInterest(label)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium border transition",
-                      active
-                        ? "bg-vibe-purple/20 text-vibe-purple border-vibe-purple/40"
-                        : "bg-white/5 text-gray-400 border-white/10 hover:text-white hover:border-white/20"
-                    )}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            <div>
+              <label className="text-sm text-gray-400">Interests</label>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {INTEREST_OPTIONS.map((label) => {
+                  const active = interests.includes(label);
+                  return (
+                    <button
+                      key={label}
+                      onClick={() => toggleInterest(label)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs font-medium border transition",
+                        active
+                          ? "bg-vibe-purple/20 text-vibe-purple border-vibe-purple/40"
+                          : "bg-white/5 text-gray-400 border-white/10 hover:text-white hover:border-white/20"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-400">Usually free at</label>
+              <input
+                value={freeTime}
+                onChange={(e) => setFreeTime(e.target.value)}
+                className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
+                placeholder="e.g. Weekdays 6–8 PM"
+              />
             </div>
           </div>
-
-          <div>
-            <label className="text-sm text-gray-400">Usually free at</label>
-            <input
-              value={freeTime}
-              onChange={(e) => setFreeTime(e.target.value)}
-              className="mt-2 w-full bg-white/5 rounded-xl px-4 py-3 text-white outline-none border border-white/10 focus:border-vibe-purple"
-              placeholder="e.g. Weekdays 6–8 PM"
-            />
-          </div>
-        </div>
         )}
 
         <div className="mt-8 flex justify-end gap-3">
@@ -542,9 +543,9 @@ const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="w-14 h-14 bg-gradient-to-br from-vibe-purple to-vibe-cyan rounded-2xl flex items-center justify-center mb-16 shadow-[0_0_40px_rgba(124,58,237,0.4)] pulse-ring"
+      className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center mb-16 relative cursor-pointer group shadow-lg shadow-vibe-purple/20"
     >
-      <Zap className="text-white w-7 h-7 fill-white" />
+      <img src={Logo} alt="VibeSRM" className="w-full h-full object-cover" />
     </motion.div>
     <div className="flex flex-col gap-6">
       {[Grid, MapIcon, Users, MessageSquare, Award].map((Icon, i) => {
@@ -1274,7 +1275,7 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
       </div>
 
       {/* Social */}
-      <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "text-center flex flex-col items-center") }>
+      <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "text-center flex flex-col items-center")}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-vibe-cyan/20 to-transparent blur-3xl rounded-full" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-vibe-purple/10 to-transparent blur-2xl rounded-full" />
         <h3 className="font-display font-bold text-xl mb-4 relative z-10">Vibe Gang</h3>
@@ -2485,13 +2486,7 @@ export default function App() {
         <div className="max-w-[1600px] mx-auto space-y-6">
           <header className="flex justify-between items-center px-4 py-2">
             <div className="flex items-center gap-5">
-              <motion.div
-                initial={{ opacity: 0, rotate: -12 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                className="w-14 h-14 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-xl shadow-violet-900/30 -rotate-3"
-              >
-                <Zap className="w-7 h-7 text-white rotate-3 fill-white" />
-              </motion.div>
+
               <div>
                 <motion.h1
                   initial={{ opacity: 0, x: -20 }}
