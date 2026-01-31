@@ -1,7 +1,7 @@
 // VibeSRM API Service
 // Connects frontend to backend
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = `http://${window.location.hostname}:5000/api`;
 
 // Token management
 let authToken = localStorage.getItem('vibesrm_token');

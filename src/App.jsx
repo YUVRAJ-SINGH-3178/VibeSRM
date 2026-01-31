@@ -100,6 +100,7 @@ const AuthModal = ({ isOpen, onClose, onAuth }) => {
       onAuth(data.user);
       onClose();
     } catch (err) {
+      console.error('Auth Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);

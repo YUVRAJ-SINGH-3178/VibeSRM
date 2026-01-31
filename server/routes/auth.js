@@ -10,8 +10,9 @@ const router = express.Router();
 const registerSchema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
-    username: Joi.string().alphanum().min(3).max(30).required(),
-    fullName: Joi.string().max(100)
+    username: Joi.string().regex(/^[a-zA-Z0-9._]+$/).min(3).max(30).required()
+        .messages({ 'string.pattern.base': 'Username can only contain letters, numbers, dots and underscores' }),
+    fullName: Joi.string().max(100).allow('', null)
 });
 
 const loginSchema = Joi.object({
