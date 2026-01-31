@@ -1618,6 +1618,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
 
   const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
@@ -1633,13 +1634,27 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
     receiveSound.current.volume = 0.4;
   }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (instant = false) => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: instant ? 'instant' : 'smooth'
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Use instant scroll for initial load, smooth for new messages
+    const isInitialLoad = messages.length > 0 && loading === false;
+    scrollToBottom(false);
   }, [messages]);
+
+  // Scroll to bottom instantly when channel changes or after loading
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      scrollToBottom(true);
+    }
+  }, [loading, activeChannel]);
 
   useEffect(() => {
     let subscription;
@@ -1840,7 +1855,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
         </div>
 
         {/* Messages Scroll Area */}
-        <div className="flex-1 overflow-y-auto px-6 pt-32 pb-4 space-y-6 custom-scrollbar relative z-10" onClick={() => setToggledMsgId(null)}>
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 pt-32 pb-28 space-y-6 custom-scrollbar relative z-10" onClick={() => setToggledMsgId(null)}>
           {loading ? (
             <div className="h-full flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
@@ -1898,7 +1913,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                         {toggledMsgId === msg.id && (
                           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={cn("absolute -top-12 flex bg-[#1a1a24] border border-white/10 p-1.5 rounded-xl shadow-2xl z-50", isMe ? "right-0" : "left-0")}>
                             <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.text); setToggledMsgId(null); }} className="hover:bg-white/10 p-2 rounded-lg text-white" title="Copy"><Paperclip className="w-3.5 h-3.5" /></button>
-                            {isMe && <button onClick={async (e) => { e.stopPropagation(); await chat.deleteMessage(msg.id); setMessages(p => p.filter(m => m.id !== msg.id)); setToggledMsgId(null); }} className="hover:bg-red-500/20 text-red-400 p-2 rounded-lg ml-1" title="Delete"><X className="w-3.5 h-3.5" /></button>}
+                            {isMe && <button onClick={(e) => { e.stopPropagation(); const msgId = msg.id; setMessages(p => p.filter(m => m.id !== msgId)); setToggledMsgId(null); chat.deleteMessage(msgId).catch(() => { addNotification?.('Failed to delete message', 'error'); }); }} className="hover:bg-red-500/20 text-red-400 p-2 rounded-lg ml-1" title="Delete"><X className="w-3.5 h-3.5" /></button>}
                           </motion.div>
                         )}
                       </div>
