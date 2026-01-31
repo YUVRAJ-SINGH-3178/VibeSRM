@@ -16,6 +16,8 @@ import {
   AlertCircle,
   Send,
   MoreVertical,
+  Copy,
+  Trash2,
   Phone,
   Video,
   LogIn,
@@ -1291,9 +1293,10 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
   );
 };
 
-const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) => {
+const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [activeActionId, setActiveActionId] = useState(null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
@@ -1383,12 +1386,15 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) =>
     } catch (e) { /* ignore */ }
 
     try {
-      const { data, error } = await chat.sendMessage(textPayload, activeChannel);
-      if (error) throw error;
+      const returned = await chat.sendMessage(textPayload, activeChannel);
+      // Replace optimistic temp message with server-provided message
+      if (returned && returned.id) {
+        setMessages(prev => prev.map(m => (m.id === tempId ? returned : m)));
+      }
     } catch (err) {
       console.error("Failed to send:", err);
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      // Show error toast
+      addNotification?.(err?.message || 'Failed to send message', 'error');
     }
   };
 
@@ -1523,13 +1529,35 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) =>
               const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
               const showTime = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
 
+              const handleCopy = async (text) => {
+                try {
+                  await navigator.clipboard.writeText(text);
+                  addNotification?.('Copied to clipboard', 'success');
+                } catch (e) {
+                  console.error('Copy failed', e);
+                  addNotification?.('Copy failed', 'error');
+                }
+              };
+
+              const handleDelete = async (id) => {
+                try {
+                  if (!confirm('Delete this message? This cannot be undone.')) return;
+                  await chat.deleteMessage(id);
+                  setMessages(prev => prev.filter(m => m.id !== id));
+                  addNotification?.('Message deleted', 'success');
+                } catch (err) {
+                  console.error('Delete failed', err);
+                  addNotification?.(err?.message || 'Failed to delete message', 'error');
+                }
+              };
+
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15 }}
                   key={msg.id}
-                  className={cn("flex gap-2.5", isMe ? "flex-row-reverse" : "flex-row")}
+                  className={cn("flex gap-2.5 group", isMe ? "flex-row-reverse" : "flex-row")}
                 >
                   <div className="w-8 flex-shrink-0">
                     {showAvatar && (
@@ -1544,13 +1572,50 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) =>
                     {showAvatar && !isMe && (
                       <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
                     )}
-                    <div className={cn(
-                      "px-4 py-2.5 text-[14px] leading-relaxed relative",
-                      isMe
-                        ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
-                        : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
-                    )}>
-                      {msg.text}
+                    <div
+                      onClick={() => setActiveActionId(activeActionId === msg.id ? null : msg.id)}
+                      className={cn(
+                        "px-4 py-2.5 text-[14px] leading-relaxed relative cursor-pointer",
+                        isMe
+                          ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
+                          : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
+                      )}
+                    >
+                      <div className="relative">
+                        <div>{msg.text}</div>
+
+                        {activeActionId === msg.id && (
+                          <div className="mt-2 flex gap-2 justify-end">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleCopy(msg.text); setActiveActionId(null); }}
+                              className="flex items-center gap-2 text-xs text-gray-200 hover:text-white bg-white/6 px-3 py-1 rounded"
+                            >
+                              <Copy className="w-4 h-4" />
+                              <span>Copy</span>
+                            </button>
+
+                            {isMe && (
+                              String(msg.id).startsWith('temp-') ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); setActiveActionId(null); }}
+                                  className="flex items-center gap-2 text-xs text-gray-200 hover:text-white bg-white/6 px-3 py-1 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Remove</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); setActiveActionId(null); }}
+                                  className="flex items-center gap-2 text-xs text-red-400 hover:text-red-500 bg-white/6 px-3 py-1 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  <span>Delete</span>
+                                </button>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {showTime && (
                       <span className={cn("text-[10px] text-gray-600 px-1", isMe ? "text-right" : "text-left")}>
@@ -1569,10 +1634,11 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels }) =>
         <div className="relative z-10 p-4">
           <form onSubmit={handleSend} className="relative">
             <div className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-md rounded-2xl border border-white/[0.08] p-1.5 pl-5 shadow-xl shadow-black/20">
-              <input
+              <textarea
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
-                className="flex-1 bg-transparent py-3 outline-none text-white placeholder-gray-500 text-sm"
+                rows={2}
+                className="flex-1 bg-transparent py-3 pl-3 pr-3 outline-none text-white placeholder-gray-400 text-sm resize-none h-14"
                 placeholder={`Type a message...`}
               />
               <button
@@ -2002,7 +2068,7 @@ export default function App() {
       case 'social':
         return <SocialView events={eventsData} onChatWith={handleChatWith} />;
       case 'chat':
-        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} />;
+        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} />;
       default:
         return <DashboardView locations={locations} events={eventsData} />;
     }

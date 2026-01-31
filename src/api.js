@@ -441,6 +441,23 @@ export const chat = {
         return data;
     },
 
+    deleteMessage: async (messageId) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Only delete if the current user is the sender
+        const { data, error } = await supabase
+            .from('messages')
+            .delete()
+            .eq('id', messageId)
+            .eq('sender_id', user.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return { deleted: true, message: data };
+    },
+
     subscribeToMessages: (channelId, callback) => {
         return supabase
             .channel(`channel:${channelId}`)

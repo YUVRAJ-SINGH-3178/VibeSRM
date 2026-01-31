@@ -31,6 +31,10 @@ FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can send messages" ON messages
 FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
+-- Allow users to delete their own messages
+CREATE POLICY "Users can delete their own messages" ON messages
+FOR DELETE USING (auth.uid() = sender_id);
+
 -- Enable RLS on users table
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
