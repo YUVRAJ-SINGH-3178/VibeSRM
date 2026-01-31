@@ -1676,15 +1676,21 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                                   return;
                                 }
 
+                                // Optimistically remove message from UI
+                                const prior = messages;
+                                setMessages(prev => prev.filter(m => m.id !== msg.id));
+                                setToggledMsgId(null);
+
                                 try {
                                   await chat.deleteMessage(msg.id);
-                                  setMessages(prev => prev.filter(m => m.id !== msg.id));
                                   addNotification?.('Message deleted', 'success');
                                 } catch (err) {
+                                  // Restore previous state on failure and show detailed error
                                   console.error('Delete failed', err);
-                                  addNotification?.('Delete failed', 'error');
+                                  setMessages(prior);
+                                  const errMsg = err?.message || err?.error || JSON.stringify(err);
+                                  addNotification?.(`Delete failed: ${errMsg}`, 'error');
                                 }
-                                setToggledMsgId(null);
                               }}
                               className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md text-xs"
                             >Delete</button>
