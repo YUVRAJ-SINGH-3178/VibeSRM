@@ -1341,6 +1341,7 @@ export default function App() {
         }
 
         // Load events
+        const eventRes = await events.getAll();
         if (eventRes.events) {
           setEventsData(eventRes.events.map(mapEvent));
         }
