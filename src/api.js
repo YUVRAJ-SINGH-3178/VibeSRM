@@ -306,16 +306,59 @@ export const events = {
 
     join: async (id) => {
         const { data: { user } } = await supabase.auth.getUser();
-        // In PostgreSQL/Supabase, joining might mean adding to an JSONB array or a junction table
-        // Based on our schema.sql, we'll use the attendees UUID array
-        const { data: event } = await supabase.from('events').select('attendees').eq('id', id).single();
-        const newAttendees = [...(event.attendees || []), user.id];
+        // Get current attendees
+        const { data: event, error: fetchError } = await supabase
+            .from('events')
+            .select('attendees')
+            .eq('id', id)
+            .single();
+        if (fetchError) throw fetchError;
+
+        // Check if already joined
+        const currentAttendees = event.attendees || [];
+        if (currentAttendees.includes(user.id)) {
+            return { alreadyJoined: true };
+        }
+
+        // Add user to attendees
+        const newAttendees = [...currentAttendees, user.id];
         const { data, error } = await supabase
             .from('events')
             .update({ attendees: newAttendees })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw error;
+        return { event: data, joined: true };
+    },
+
+    leave: async (id) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: event, error: fetchError } = await supabase
+            .from('events')
+            .select('attendees')
+            .eq('id', id)
+            .single();
+        if (fetchError) throw fetchError;
+
+        const newAttendees = (event.attendees || []).filter(uid => uid !== user.id);
+        const { data, error } = await supabase
+            .from('events')
+            .update({ attendees: newAttendees })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) throw error;
+        return { event: data, left: true };
+    },
+
+    delete: async (id) => {
+        const { error } = await supabase
+            .from('events')
+            .delete()
             .eq('id', id);
         if (error) throw error;
-        return data;
+        return { deleted: true };
     }
 };
 // ============ CHAT ============
