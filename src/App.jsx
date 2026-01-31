@@ -96,6 +96,16 @@ const INITIAL_LOCATIONS = [
 
 const FORECAST = [50, 75, 90, 60, 45, 30, 80];
 
+const DAILY_ACTIVITY = [
+  { day: 'Mon', study: 3.2, play: 1.1, other: 0.7 },
+  { day: 'Tue', study: 2.4, play: 1.5, other: 0.9 },
+  { day: 'Wed', study: 4.1, play: 0.6, other: 1.2 },
+  { day: 'Thu', study: 3.6, play: 1.0, other: 0.8 },
+  { day: 'Fri', study: 2.1, play: 2.0, other: 1.1 },
+  { day: 'Sat', study: 1.4, play: 2.6, other: 0.9 },
+  { day: 'Sun', study: 2.9, play: 1.2, other: 1.5 }
+];
+
 const DEFAULT_CHAT_CHANNELS = [
   { id: 'global', label: 'Global' },
   { id: 'study-help', label: 'Study Help' },
@@ -204,7 +214,7 @@ const ProfileModal = ({ isOpen, onClose, currentUser, onSave }) => {
         )}
 
         {viewMode === 'flashcard' ? (
-          <div className="rounded-[2rem] p-6 bg-gradient-to-br from-violet-600/20 via-transparent to-fuchsia-600/10 border border-white/10">
+          <div className="rounded-[2rem] p-6 bg-gradient-to-br from-violet-600/40 via-[#0B0B14]/70 to-white/10 border border-white/15 shadow-[0_0_40px_rgba(124,58,237,0.25)]">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
                 <img
@@ -1062,8 +1072,13 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
     e.description.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
+  const maxActivityTotal = Math.max(
+    ...DAILY_ACTIVITY.map(x => x.study + x.play + x.other),
+    1
+  );
+
   return (
-    <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-6 gap-6 h-auto md:h-[800px]">
+    <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-8 gap-6 h-auto md:min-h-[800px]">
       {/* Map */}
       <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <BentoMap locations={locations} events={events} selected={selectedLoc} onSelect={setSelectedLoc} />
@@ -1305,6 +1320,38 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
           >
             Find New
           </motion.button>
+        </div>
+      </div>
+
+      {/* Daily Activity */}
+      <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "flex flex-col") }>
+        <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-vibe-purple/20 to-transparent blur-3xl rounded-full" />
+        <div className="absolute bottom-0 left-0 w-44 h-44 bg-gradient-to-tr from-white/10 to-transparent blur-2xl rounded-full" />
+        <div className="relative z-10 flex items-center justify-between mb-4">
+          <h3 className="font-display font-bold text-xl">Daily Activity</h3>
+          <span className="text-[11px] text-gray-500">Last 7 days</span>
+        </div>
+        <div className="flex-1 flex items-end gap-3 relative z-10 h-[180px]">
+          {DAILY_ACTIVITY.map((d) => {
+            const total = d.study + d.play + d.other;
+            const pct = (val) => `${(val / maxActivityTotal) * 100}%`;
+            return (
+              <div key={d.day} className="flex-1 h-full flex flex-col items-center gap-2">
+                <div className="w-full max-w-[28px] h-full min-h-[140px] flex flex-col-reverse rounded-2xl overflow-hidden border border-white/10 bg-white/5 shadow-inner">
+                  <div className="bg-vibe-cyan/80" style={{ height: pct(d.play) }} />
+                  <div className="bg-vibe-purple/80" style={{ height: pct(d.study) }} />
+                  <div className="bg-white/70" style={{ height: pct(d.other) }} />
+                </div>
+                <span className="text-[10px] text-gray-400">{d.day}</span>
+                <span className="text-[10px] text-gray-500">{total.toFixed(1)}h</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex items-center gap-3 text-[10px] text-gray-400">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-vibe-purple/80" />Study</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-vibe-cyan/80" />Play</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-white/70" />Other</span>
         </div>
       </div>
 

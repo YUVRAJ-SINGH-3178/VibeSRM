@@ -187,3 +187,56 @@ CREATE INDEX IF NOT EXISTS idx_checkins_location ON checkins(location_id);
 CREATE INDEX IF NOT EXISTS idx_checkins_active ON checkins(is_active);
 CREATE INDEX IF NOT EXISTS idx_events_major ON events(is_major);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events(start_time);
+
+-- Achievement Progress Table (tracks progress toward requirements)
+CREATE TABLE IF NOT EXISTS achievement_progress (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    achievement_id UUID REFERENCES achievements(id) ON DELETE CASCADE,
+    progress_value INTEGER DEFAULT 0,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, achievement_id)
+);
+
+-- Badges Table
+CREATE TABLE IF NOT EXISTS badges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    icon_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User Badges Table
+CREATE TABLE IF NOT EXISTS user_badges (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    badge_id UUID REFERENCES badges(id) ON DELETE CASCADE,
+    awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, badge_id)
+);
+
+-- Leaderboard Table (computed leaderboard per period)
+CREATE TABLE IF NOT EXISTS leaderboards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    period VARCHAR(20) NOT NULL, -- daily | weekly | monthly | all_time
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Leaderboard Entries Table
+CREATE TABLE IF NOT EXISTS leaderboard_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    leaderboard_id UUID REFERENCES leaderboards(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    score INTEGER NOT NULL DEFAULT 0,
+    rank INTEGER NOT NULL DEFAULT 0,
+    stats JSONB DEFAULT '{}'::jsonb,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(leaderboard_id, user_id)
+);
+
+-- Indexes for achievements and leaderboard
+CREATE INDEX IF NOT EXISTS idx_achievement_progress_user ON achievement_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_badges_user ON user_badges(user_id);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_entries_leaderboard ON leaderboard_entries(leaderboard_id);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_entries_rank ON leaderboard_entries(rank);
