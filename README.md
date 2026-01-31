@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="https://api.dicebear.com/7.x/notionists/svg?seed=VibeSRM" width="100" height="100" alt="VibeSRM Logo" />
+  <img src="src/Logo.png" width="120" height="120" alt="VibeSRM Logo" />
   <h1>⚡ VibeSRM</h1>
-  <p><b>The Future of Campus Life, Visualized.</b></p>
-  <p><i>A premium, ultra-modern Smart Campus Assistant built with a "Glass & Neon" design philosophy to bridge the gap between physical campus life and digital connection.</i></p>
+  <p><b>Crafted by Team Bug Sneaker | For VibeCraft</b></p>
+  <p><i>VibeSRM is a premium real-time campus hub that blends holographic chat with live occupancy heatmaps in a stunning "Glass & Neon" aesthetic to elevate the student experience.</i></p>
 
   <div align="center">
     <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
@@ -99,7 +99,7 @@ VibeSRM is built to be resilient and secure.
 
 <div align="center">
   <p>Hand-crafted with 💜 by <b>Yuvraj Singh</b></p>
-  <p><i>Elevating the student experience, one vibe at a time.</i></p>
+  <p><b>Team Bug Sneaker | Crafted for the Vibe. ⚡</b></p>
   <br />
-  <img src="https://api.dicebear.com/7.x/shapes/svg?seed=VibeSRM&backgroundColor=030014" width="200" opacity="0.5" />
+  <img src="src/Logo.png" width="100" opacity="0.5" />
 </div>
