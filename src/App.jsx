@@ -42,7 +42,10 @@ const mapLocation = (loc) => ({
   occupancy: loc.occupancyPercent || Math.round((loc.currentOccupancy / loc.capacity) * 100),
   capacity: loc.capacity,
   desc: loc.description || `${loc.activeUsers || 0} people studying`,
-  coords: { x: 100 + Math.random() * 700, y: 100 + Math.random() * 500 },
+  coords: {
+    x: loc.mapX || (100 + Math.random() * 800),
+    y: loc.mapY || (100 + Math.random() * 600)
+  },
   color: loc.occupancyPercent > 70 ? 'text-vibe-rose' : loc.occupancyPercent > 30 ? 'text-amber-400' : 'text-vibe-cyan',
   amenities: loc.amenities,
   avgNoise: loc.avgNoise,
@@ -238,7 +241,7 @@ const NavBar = ({ active, setTab }) => (
   </nav>
 );
 
-const BentoMap = ({ locations, selected, onSelect, fullScreen = false }) => (
+const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false }) => (
   <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
     {/* Premium Gradient Background */}
     <div className="absolute inset-0 bg-gradient-to-br from-[#0a0118] via-[#1a0f2e] to-[#0d0520]" />
@@ -369,6 +372,19 @@ const BentoMap = ({ locations, selected, onSelect, fullScreen = false }) => (
             <text x="940" y="550" fill="#6ee7b7" fontSize="12" textAnchor="middle" fontFamily="system-ui">Hub</text>
           </g>
 
+          {/* Major Events - Special Markers */}
+          {events?.filter(e => e.isMajor).map((event, idx) => (
+            <g key={event._id || idx} className="cursor-pointer transition-all" onClick={() => onSelect({ ...event, id: event._id, type: 'event' })}>
+              <circle cx={event.coords.x} cy={event.coords.y} r="45" fill="none" stroke="#f59e0b" className="animate-pulse" strokeWidth="2" opacity="0.6" />
+              <circle cx={event.coords.x} cy={event.coords.y} r="25" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" strokeWidth="3" filter="url(#softGlow)" />
+              <Zap cx={event.coords.x} cy={event.coords.y} className="w-8 h-8 text-amber-400 -translate-x-4 -translate-y-4" />
+
+              {/* Event Label */}
+              <rect x={event.coords.x - 60} y={event.coords.y + 40} width="120" height="24" rx="12" fill="rgba(0,0,0,0.8)" stroke="#f59e0b" strokeWidth="1" />
+              <text x={event.coords.x} y={event.coords.y + 56} fill="white" fontSize="10" fontWeight="bold" textAnchor="middle">{event.title}</text>
+            </g>
+          ))}
+
           {/* Location Markers - Premium Style */}
           {locations.map((loc, idx) => {
             const isSelected = selected?.id === loc.id;
@@ -469,6 +485,47 @@ const BentoMap = ({ locations, selected, onSelect, fullScreen = false }) => (
           </motion.div>
         );
       })}
+
+      {/* Floating Event Card */}
+      {selected?.type === 'event' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
+        >
+          <div className="bg-[#f59e0b]/10 backdrop-blur-3xl border-2 border-[#f59e0b]/30 rounded-3xl p-6 min-w-[340px] shadow-[0_0_50px_-12px_rgba(245,158,11,0.5)]">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-bold">EVENT</span>
+                  <span className="text-xs text-amber-500/80 font-mono italic">#{selected.type}</span>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-1">{selected.title}</h3>
+                <p className="text-sm text-gray-300 italic">📍 {selected.locationName}</p>
+              </div>
+              <button onClick={() => onSelect(null)} className="p-2 hover:bg-white/10 rounded-full transition">
+                <X className="w-5 h-5 text-white/50" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-gray-300">
+                {selected.description}
+              </div>
+
+              <div className="flex justify-between items-center text-xs">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3].map(j => <img key={j} className="w-8 h-8 rounded-full border-2 border-[#0A0A0F]" src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${j + 10}`} />)}
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/5">+24</div>
+                </div>
+                <button className="px-6 py-2 bg-amber-500 text-black font-bold rounded-xl hover:scale-105 transition shadow-lg shadow-amber-500/20">
+                  Count Me In!
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
 
     {/* Compact Legend */}
@@ -571,11 +628,11 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
 
 // --- View Components ---
 
-const DashboardView = ({ locations, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification }) => (
+const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification }) => (
   <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-6 gap-6 h-auto md:h-[800px]">
     {/* Map */}
     <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <BentoMap locations={locations} selected={selectedLoc} onSelect={setSelectedLoc} />
+      <BentoMap locations={locations} events={events} selected={selectedLoc} onSelect={setSelectedLoc} />
       <AnimatePresence>
         {selectedLoc && (
           <motion.div
@@ -769,7 +826,7 @@ const ChatView = () => (
   </motion.div>
 );
 
-const SocialView = () => (
+const SocialView = ({ events }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[800px] grid grid-cols-1 md:grid-cols-3 gap-6">
     <div className={cn("col-span-2 p-8", CARD_STYLE)}>
       <h2 className="text-3xl font-display font-bold mb-6">Your Squad</h2>
@@ -786,30 +843,41 @@ const SocialView = () => (
         ))}
       </div>
     </div>
-    <div className={cn("p-8", CARD_STYLE)}>
-      <h2 className="text-xl font-display font-bold mb-6">Trending Communities</h2>
+    <div className={cn("p-8 overflow-y-auto", CARD_STYLE)}>
+      <h2 className="text-xl font-display font-bold mb-6">Campus Events</h2>
       <div className="space-y-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="p-4 rounded-xl border border-white/10 hover:border-vibe-purple/50 transition cursor-pointer group">
+        {events?.map((event, i) => (
+          <div key={event._id || i} className="p-4 rounded-xl border border-white/10 hover:border-vibe-purple/50 transition cursor-pointer group bg-white/5">
             <div className="flex justify-between items-center mb-2">
-              <span className="font-bold">React Developers</span>
-              <span className="text-xs bg-vibe-cyan/20 text-vibe-cyan px-2 py-1 rounded">Tech</span>
+              <span className="font-bold">{event.title}</span>
+              <span className={cn("text-[10px] px-2 py-1 rounded",
+                event.isMajor ? "bg-amber-500/20 text-amber-500" : "bg-vibe-cyan/20 text-vibe-cyan"
+              )}>
+                {event.isMajor ? 'MAJOR' : event.type.toUpperCase()}
+              </span>
             </div>
-            <p className="text-sm text-gray-400 mb-3">Community for React enthusiasts to share code.</p>
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map(j => <div key={j} className="w-8 h-8 rounded-full bg-gray-600 border border-black" />)}
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] border border-black">+42</div>
+            <p className="text-sm text-gray-400 mb-1">{event.description}</p>
+            <p className="text-xs text-vibe-purple mb-3">📍 {event.locationName}</p>
+            <div className="flex justify-between items-center">
+              <div className="flex -space-x-2">
+                {[1, 2, 3].map(j => <div key={j} className="w-6 h-6 rounded-full bg-gray-600 border border-black" />)}
+                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] border border-black">+{Math.floor(Math.random() * 50)}</div>
+              </div>
+              <button className="text-xs font-bold text-white hover:text-vibe-purple transition">Join Event →</button>
             </div>
           </div>
         ))}
+        {(!events || events.length === 0) && (
+          <div className="text-center text-gray-500 py-10">No upcoming events.</div>
+        )}
       </div>
     </div>
   </motion.div>
 );
 
-const FullMapView = ({ locations, selected, onSelect }) => (
+const FullMapView = ({ locations, events, selected, onSelect }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={cn("h-[800px]", CARD_STYLE, "p-0")}>
-    <BentoMap locations={locations} selected={selected} onSelect={onSelect} fullScreen={true} />
+    <BentoMap locations={locations} events={events} selected={selected} onSelect={onSelect} fullScreen={true} />
     <div className="absolute top-6 left-6 p-6 bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 max-w-sm">
       <h2 className="text-2xl font-bold font-display mb-2">Campus Map</h2>
       <p className="text-gray-400 text-sm">Real-time occupancy and event tracking across the entire campus network.</p>
@@ -826,6 +894,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedLoc, setSelectedLoc] = useState(null);
   const [locations, setLocations] = useState(INITIAL_LOCATIONS);
+  const [eventsData, setEventsData] = useState([]);
   const [joined, setJoined] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
@@ -866,6 +935,12 @@ export default function App() {
         if (data.locations && data.locations.length > 0) {
           setLocations(data.locations.map(mapLocation));
           setBackendConnected(true);
+        }
+
+        // Load events
+        const eventRes = await events.getAll();
+        if (eventRes.events) {
+          setEventsData(eventRes.events);
         }
       } catch (err) {
         console.log('Backend not available, using demo data');
@@ -930,21 +1005,21 @@ export default function App() {
     setActiveCheckin(null);
     addNotification('Logged out successfully', 'info');
   };
-
-  const handleCreateVibe = (data) => {
-    const newLoc = {
-      id: Date.now().toString(),
-      name: data.name,
-      type: data.type,
-      occupancy: 1,
-      capacity: 10,
-      desc: data.desc,
-      coords: { x: Math.random() * 800 + 100, y: Math.random() * 600 + 100 },
-      color: 'text-white'
-    };
-    setLocations([...locations, newLoc]);
-    addNotification(`Vibe "${data.name}" created!`);
-    setSelectedLoc(newLoc);
+  const handleCreateVibe = async (data) => {
+    try {
+      const res = await events.create({
+        title: data.name,
+        description: data.desc,
+        type: data.type,
+        locationName: 'Community', // Default for now
+        coords: { x: 400 + Math.random() * 200, y: 300 + Math.random() * 200 },
+        startTime: new Date()
+      });
+      setEventsData([res.event, ...eventsData]);
+      addNotification("Vibe Created! Showing in Community Section. 🔥");
+    } catch (err) {
+      addNotification("Failed to create vibe", "error");
+    }
   };
 
   const handleCheckIn = async (loc) => {
@@ -1019,6 +1094,7 @@ export default function App() {
       case 'dashboard':
         return <DashboardView
           locations={locations}
+          events={eventsData}
           selectedLoc={selectedLoc}
           setSelectedLoc={setSelectedLoc}
           joined={joined}
@@ -1029,13 +1105,13 @@ export default function App() {
           addNotification={addNotification}
         />;
       case 'map':
-        return <FullMapView locations={locations} selected={selectedLoc} onSelect={setSelectedLoc} />;
+        return <FullMapView locations={locations} events={eventsData} selected={selectedLoc} onSelect={setSelectedLoc} />;
       case 'social':
-        return <SocialView />;
+        return <SocialView events={eventsData} />;
       case 'chat':
         return <ChatView />;
       default:
-        return <DashboardView />;
+        return <DashboardView locations={locations} events={eventsData} />;
     }
   };
 
@@ -1146,7 +1222,15 @@ export default function App() {
         </header>
 
         {renderContent()}
+      </div>
 
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
+      <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
+
+      <div className="fixed bottom-8 right-8 z-[70] space-y-4">
+        {notifications.map(n => (
+          <Toast key={n.id} message={n.msg} type={n.type} onClose={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} />
+        ))}
       </div>
     </div>
   );

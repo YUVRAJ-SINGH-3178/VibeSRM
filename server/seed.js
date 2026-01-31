@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import Location from './models/Location.js';
 import Achievement from './models/Achievement.js';
 import NoiseReport from './models/NoiseReport.js';
+import Event from './models/Event.js';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ const seedData = async () => {
         await Location.deleteMany({});
         await Achievement.deleteMany({});
         await NoiseReport.deleteMany({});
+        await Event.deleteMany({});
         console.log('🗑️  Cleared existing data');
 
         // Seed locations
@@ -25,6 +27,8 @@ const seedData = async () => {
                 type: 'library',
                 latitude: 12.9716,
                 longitude: 77.5946,
+                mapX: 650,
+                mapY: 465,
                 capacity: 500,
                 currentOccupancy: Math.floor(Math.random() * 400),
                 amenities: { wifi: true, outlets: true, food: false, whiteboard: false },
@@ -36,6 +40,8 @@ const seedData = async () => {
                 type: 'cafe',
                 latitude: 12.9726,
                 longitude: 77.5956,
+                mapX: 950,
+                mapY: 250,
                 capacity: 150,
                 currentOccupancy: Math.floor(Math.random() * 120),
                 amenities: { wifi: true, outlets: true, food: true, whiteboard: false },
@@ -43,14 +49,16 @@ const seedData = async () => {
                 photoUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24'
             },
             {
-                name: 'Spartan Gym',
+                name: 'Main Tech Park',
                 type: 'gym',
                 latitude: 12.9706,
                 longitude: 77.5936,
+                mapX: 250,
+                mapY: 670,
                 capacity: 200,
                 currentOccupancy: Math.floor(Math.random() * 160),
                 amenities: { wifi: false, outlets: false, food: false, whiteboard: false },
-                description: 'Empty • Cardio Deck',
+                description: 'Innovation & Research Center',
                 photoUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'
             },
             {
@@ -58,6 +66,8 @@ const seedData = async () => {
                 type: 'study',
                 latitude: 12.9736,
                 longitude: 77.5966,
+                mapX: 940,
+                mapY: 530,
                 capacity: 80,
                 currentOccupancy: Math.floor(Math.random() * 70),
                 amenities: { wifi: true, outlets: true, food: false, whiteboard: true },
@@ -65,48 +75,30 @@ const seedData = async () => {
                 photoUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c'
             },
             {
-                name: 'Central Cafeteria',
+                name: 'Sports Complex',
                 type: 'cafe',
                 latitude: 12.9716,
                 longitude: 77.5976,
+                mapX: 900,
+                mapY: 650,
                 capacity: 300,
                 currentOccupancy: Math.floor(Math.random() * 250),
                 amenities: { wifi: true, outlets: false, food: true, whiteboard: false },
-                description: 'All-day dining',
+                description: 'Olympic Size Pool & Gym',
                 photoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'
             },
             {
-                name: 'Study Room A',
+                name: 'Academic Block A',
                 type: 'study',
                 latitude: 12.9696,
                 longitude: 77.5946,
+                mapX: 250,
+                mapY: 325,
                 capacity: 20,
                 currentOccupancy: Math.floor(Math.random() * 18),
                 amenities: { wifi: true, outlets: true, food: false, whiteboard: true },
-                description: 'Group study sessions',
+                description: 'CSE & IT Department',
                 photoUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2'
-            },
-            {
-                name: 'Outdoor Pavilion',
-                type: 'lounge',
-                latitude: 12.9746,
-                longitude: 77.5926,
-                capacity: 100,
-                currentOccupancy: Math.floor(Math.random() * 80),
-                amenities: { wifi: true, outlets: false, food: false, whiteboard: false },
-                description: 'Fresh air study spot',
-                photoUrl: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c'
-            },
-            {
-                name: 'Music Practice Room',
-                type: 'other',
-                latitude: 12.9686,
-                longitude: 77.5986,
-                capacity: 15,
-                currentOccupancy: Math.floor(Math.random() * 12),
-                amenities: { wifi: false, outlets: true, food: false, whiteboard: false },
-                description: 'Soundproof rooms',
-                photoUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d'
             }
         ]);
         console.log(`✅ Seeded ${locations.length} locations`);
@@ -140,6 +132,41 @@ const seedData = async () => {
         }
         await NoiseReport.insertMany(noiseReports);
         console.log(`✅ Seeded ${noiseReports.length} noise reports`);
+
+        // Seed events
+        const events = await Event.insertMany([
+            {
+                title: 'SRM Hackathon 2024',
+                description: 'The biggest internal hackathon of the semester!',
+                type: 'major',
+                locationName: 'Innovation Hub',
+                coords: { x: 940, y: 530 },
+                startTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+                isMajor: true,
+                tags: ['tech', 'hackathon']
+            },
+            {
+                title: 'Acoustic Night',
+                description: 'Live music and chill vibes at the cafeteria.',
+                type: 'music',
+                locationName: 'Central Cafeteria',
+                coords: { x: 950, y: 250 },
+                startTime: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                isMajor: true,
+                tags: ['music', 'unplugged']
+            },
+            {
+                title: 'Python Workshop',
+                description: 'Learn the basics of Python in 2 hours!',
+                type: 'tech',
+                locationName: 'Academic Block A',
+                coords: { x: 250, y: 325 },
+                startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+                isMajor: false,
+                tags: ['coding', 'workshop']
+            }
+        ]);
+        console.log(`✅ Seeded ${events.length} events`);
 
         console.log('\n🎉 Database seeded successfully!');
         process.exit(0);
