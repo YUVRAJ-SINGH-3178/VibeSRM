@@ -1006,19 +1006,29 @@ export default function App() {
     addNotification('Logged out successfully', 'info');
   };
   const handleCreateVibe = async (data) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      addNotification("Please sign in to create vibes!", "error");
+      return;
+    }
+
     try {
       const res = await events.create({
         title: data.name,
         description: data.desc,
         type: data.type,
-        locationName: 'Community', // Default for now
-        coords: { x: 400 + Math.random() * 200, y: 300 + Math.random() * 200 },
+        locationName: 'Community Hub',
+        coords: { x: 500 + Math.random() * 100, y: 400 + Math.random() * 100 },
         startTime: new Date()
       });
-      setEventsData([res.event, ...eventsData]);
-      addNotification("Vibe Created! Showing in Community Section. 🔥");
+
+      if (res.event) {
+        setEventsData(prev => [res.event, ...prev]);
+        addNotification("Vibe Created! Check the Social tab. 🔥");
+      }
     } catch (err) {
-      addNotification("Failed to create vibe", "error");
+      console.error(err);
+      addNotification(err.message || "Failed to create vibe", "error");
     }
   };
 

@@ -51,7 +51,9 @@ router.get('/', async (req, res) => {
                     activeUsers,
                     amenities: loc.amenities,
                     photoUrl: loc.photoUrl,
-                    description: loc.description
+                    description: loc.description,
+                    mapX: loc.mapX,
+                    mapY: loc.mapY
                 };
             })
         );
