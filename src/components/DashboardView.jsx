@@ -427,22 +427,35 @@ export const DashboardView = ({
                     <h3 className="font-display font-bold text-xl">Daily Activity</h3>
                     <span className="text-[11px] text-gray-500">Last 7 days</span>
                 </div>
-                <div className="flex-1 flex items-end gap-3 relative z-10 h-[180px]">
+                <div className="flex-1 flex items-end gap-3 relative z-10 h-[140px]">
                     {DAILY_ACTIVITY.map((d) => {
                         const total = d.study + d.play + d.other;
                         const pct = (val) => `${(val / maxActivityTotal) * 100}%`;
                         return (
                             <div key={d.day} className="flex-1 h-full flex flex-col items-center gap-2">
-                                <div className="w-full max-w-[28px] h-full min-h-[140px] flex flex-col-reverse rounded-2xl overflow-hidden border border-white/10 bg-white/5 shadow-inner">
-                                    <div className="bg-vibe-cyan/80" style={{ height: pct(d.play) }} />
-                                    <div className="bg-vibe-purple/80" style={{ height: pct(d.study) }} />
-                                    <div className="bg-white/70" style={{ height: pct(d.other) }} />
+                                <div className="w-full max-w-[28px] h-full flex flex-col-reverse rounded-2xl overflow-hidden border border-white/5 bg-white/5 shadow-inner">
+                                    <div className="bg-vibe-cyan/80" style={{ height: pct(d.play) }} title="Play" />
+                                    <div className="bg-vibe-purple/80" style={{ height: pct(d.study) }} title="Study" />
+                                    <div className="bg-white/70" style={{ height: pct(d.other) }} title="Other" />
                                 </div>
-                                <span className="text-[10px] text-gray-400">{d.day}</span>
-                                <span className="text-[10px] text-gray-500">{total.toFixed(1)}h</span>
+                                <span className="text-[10px] text-gray-400 font-medium">{d.day}</span>
                             </div>
                         );
                     })}
+                </div>
+                <div className="mt-4 pt-4 border-t border-white/5 flex justify-center gap-4 relative z-10">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-vibe-purple" />
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Study</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-vibe-cyan" />
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Play</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-white/70" />
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Other</span>
+                    </div>
                 </div>
             </div>
         </main>
