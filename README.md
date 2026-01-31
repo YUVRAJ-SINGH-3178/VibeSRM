@@ -46,6 +46,8 @@ Built with a focus on performance and premium design.
 
 ## ⚡ Getting Started
 
+### Frontend
+
 1.  **Clone the repository**
     ```bash
     git clone https://github.com/YUVRAJ-SINGH-3178/VibeSRM.git
@@ -66,6 +68,51 @@ Built with a focus on performance and premium design.
     ```bash
     npm run build
     ```
+
+### Backend
+
+1.  **Navigate to server directory**
+    ```bash
+    cd server
+    npm install
+    ```
+
+2.  **Install PostgreSQL & Redis**
+    - PostgreSQL 14+: [Download](https://www.postgresql.org/download/)
+    - Redis: [Download for Windows](https://github.com/microsoftarchive/redis/releases)
+
+3.  **Run setup script**
+    ```bash
+    setup.bat
+    ```
+    This will create the database, run migrations, and seed sample data.
+
+4.  **Start Redis**
+    ```bash
+    redis-server
+    ```
+
+5.  **Start backend server**
+    ```bash
+    npm run dev
+    ```
+    Server runs on `http://localhost:5000`
+
+---
+
+## 🔌 API Features
+
+The backend provides:
+- ✅ **JWT Authentication** - Secure user sessions
+- ✅ **GPS-Verified Check-ins** - 50m radius verification
+- ✅ **Coin Economy** - Earn rewards for studying
+- ✅ **Ghost Mode** - Anonymous studying with random names
+- ✅ **Noise Heatmap** - Real-time noise level tracking
+- ✅ **Smart Predictions** - 6-hour occupancy forecasts
+- ✅ **Real-time Updates** - Socket.io for live data
+- ✅ **Achievement System** - Unlock badges and rewards
+
+See `server/README.md` for full API documentation.
 
 ---
 
