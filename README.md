@@ -154,8 +154,8 @@ Our team combined expertise in design, engineering, and data to craft the ultima
 | :--- | :--- | :--- |
 | **Yuvraj Singh** | **Team Leader** & Full-Stack Developer | [@YUVRAJ-SINGH-3178](https://github.com/YUVRAJ-SINGH-3178) |
 | **Aayush Bansal** | UI/UX Designer | [@Aayush-Bansal07](https://github.com/Aayush-Bansal07) |
-| **Akshat** | API Integration Specialist | [@Akshatgitty](https://github.com/Akshatgitty) |
-| **Adarsh** | Database Architect | [@Adarsh-Pandey28](https://github.com/Adarsh-Pandey28) |
+| **Akshat** | Database Architect  | [@Akshatgitty](https://github.com/Akshatgitty) |
+| **Adarsh** | API Integration Specialist| [@Adarsh-Pandey28](https://github.com/Adarsh-Pandey28) |
 
 ---
 
