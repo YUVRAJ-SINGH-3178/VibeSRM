@@ -583,61 +583,83 @@ const NotificationPanel = ({ items, onClear, onClose }) => (
 );
 
 const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
-  <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/5 bg-[#030305]/80 backdrop-blur-2xl">
+  <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/10 bg-gradient-to-b from-[#0a0a12] via-[#080810] to-[#0a0a12] backdrop-blur-2xl shadow-[1px_0_30px_rgba(139,92,246,0.1)]">
+    {/* Subtle glow line on the right edge */}
+    <div className="absolute right-0 top-0 h-full w-[1px] bg-gradient-to-b from-transparent via-vibe-purple/30 to-transparent" />
+    
+    {/* Active indicator - positioned at navbar left edge */}
+    <div className="absolute left-0 top-0 h-full w-1.5 pointer-events-none">
+      {['dashboard', 'map', 'social', 'chat', 'achievements'].map((id, i) => (
+        active === id && (
+          <motion.div
+            key={id}
+            layoutId="nav-indicator"
+            className="absolute left-0 w-1.5 h-10 bg-gradient-to-b from-vibe-purple via-vibe-cyan to-vibe-purple rounded-r-full shadow-[0_0_15px_rgba(139,92,246,0.8)]"
+            style={{ top: `calc(${188 + i * 72}px)` }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )
+      ))}
+    </div>
+    
     <motion.div
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center mb-16 relative cursor-pointer group shadow-lg shadow-vibe-purple/20"
+      className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center mb-16 relative cursor-pointer group shadow-lg shadow-vibe-purple/30 ring-2 ring-vibe-purple/20"
     >
-      <img src={Logo} alt="VibeSRM" className="w-full h-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10" />
+      <img src={Logo} alt="VibeSRM" className="w-full h-full object-cover relative z-10" />
     </motion.div>
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {[Grid, MapIcon, Users, MessageSquare, Award].map((Icon, i) => {
         const id = ['dashboard', 'map', 'social', 'chat', 'achievements'][i];
         const labels = ['Home', 'Map', 'Social', 'Chat', 'Achievements'];
+        const isActive = active === id;
         return (
           <motion.button
             key={id}
             onClick={() => setTab(id)}
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
             className={cn(
               "relative p-4 rounded-2xl transition-all duration-300 group",
-              active === id
-                ? "text-white bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10 shadow-[0_0_20px_-5px_rgba(124,58,237,0.5)]"
-                : "text-gray-500 hover:text-white hover:bg-white/5"
+              isActive
+                ? "text-white bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/20 shadow-[0_0_25px_rgba(139,92,246,0.4)] border border-vibe-purple/30"
+                : "text-gray-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
             )}
           >
-            <Icon className="w-6 h-6" />
-            {active === id && (
-              <motion.div
-                layoutId="nav-indicator"
-                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-vibe-purple to-vibe-cyan rounded-r-full"
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              />
+            {/* Icon glow effect */}
+            {isActive && (
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10 blur-xl -z-10" />
             )}
-            <span className="absolute left-full ml-4 px-3 py-1.5 bg-[#0A0A0F] border border-white/10 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+            <Icon className={cn("w-6 h-6 transition-all", isActive && "drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]")} strokeWidth={isActive ? 2.5 : 1.5} />
+            <span className="absolute left-full ml-4 px-4 py-2 bg-[#0A0A0F]/95 border border-vibe-purple/20 rounded-xl text-xs font-bold whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-lg shadow-vibe-purple/10 backdrop-blur-xl">
               {labels[i]}
             </span>
           </motion.button>
         )
       })}
     </div>
-    <div className="mt-auto flex flex-col items-center gap-4">
-      <button
+    <div className="mt-auto flex flex-col items-center gap-5">
+      <motion.button
         onClick={() => setTab('settings')}
+        whileHover={{ scale: 1.1, rotate: 90 }}
+        transition={{ duration: 0.3 }}
         className={cn(
-          "p-3 rounded-xl transition",
-          active === 'settings' ? "text-white bg-vibe-purple/20 shadow-lg shadow-vibe-purple/20" : "text-gray-500 hover:text-white hover:bg-white/5"
+          "p-3.5 rounded-xl transition-all border",
+          active === 'settings' 
+            ? "text-white bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/20 shadow-[0_0_20px_rgba(139,92,246,0.4)] border-vibe-purple/30" 
+            : "text-gray-500 hover:text-white hover:bg-white/5 border-transparent hover:border-white/10"
         )}
         title="Settings"
       >
-        <Settings className="w-5 h-5" />
-      </button>
-      <button
+        <Settings className={cn("w-5 h-5", active === 'settings' && "drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]")} />
+      </motion.button>
+      <motion.button
         onClick={onOpenProfile}
-        className="w-11 h-11 rounded-full border-2 border-vibe-purple/50 overflow-hidden hover:border-vibe-purple transition-colors cursor-pointer shadow-lg shadow-vibe-purple/20"
+        whileHover={{ scale: 1.1 }}
+        className="w-12 h-12 rounded-xl border-2 border-vibe-purple/40 overflow-hidden hover:border-vibe-purple transition-all cursor-pointer shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
         title={currentUser ? currentUser.username || 'Your Profile' : 'Not signed in'}
       >
         <img
@@ -645,7 +667,7 @@ const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
           alt="User"
           className="w-full h-full object-cover"
         />
-      </button>
+      </motion.button>
     </div>
   </nav>
 );
@@ -1373,8 +1395,11 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
 
       {/* Search & List */}
       <div className="col-span-1 md:col-span-4 row-span-4 flex flex-col gap-6">
-        <div className={cn("p-4 flex flex-col gap-4 transition-colors", CARD_STYLE)}>
-          <div className="flex items-center gap-4 text-gray-400 focus-within:text-white">
+        <div className={cn("p-4 flex flex-col gap-4 transition-colors relative overflow-hidden", CARD_STYLE)}>
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/5 via-transparent to-white/5 pointer-events-none" />
+          
+          <div className="relative flex items-center gap-4 text-gray-400 focus-within:text-white bg-white/5 rounded-xl px-4 py-3 border border-white/10 focus-within:border-vibe-purple/50 transition-all">
             <Search className="w-5 h-5" />
             <input
               type="text"
@@ -1385,28 +1410,34 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
             />
           </div>
           {/* Tabs */}
-          <div className="flex p-1 bg-black/40 rounded-xl">
+          <div className="relative flex p-1.5 bg-gradient-to-r from-black/60 via-black/40 to-black/60 rounded-2xl border border-white/5">
             <button
               onClick={() => setActiveListTab('locations')}
-              className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition", activeListTab === 'locations' ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300")}
+              className={cn("flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300", activeListTab === 'locations' ? "bg-gradient-to-r from-white/15 to-white/10 text-white shadow-lg" : "text-gray-500 hover:text-gray-300")}
             >
               Locations
             </button>
             <button
               onClick={() => setActiveListTab('vibes')}
-              className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition", activeListTab === 'vibes' ? "bg-vibe-purple text-white" : "text-gray-500 hover:text-gray-300")}
+              className={cn("flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300", activeListTab === 'vibes' ? "bg-gradient-to-r from-vibe-purple to-vibe-purple/80 text-white shadow-lg shadow-vibe-purple/25" : "text-gray-500 hover:text-gray-300")}
             >
               Live Vibes
             </button>
           </div>
         </div>
 
-        <div className={cn("flex-1 p-6 overflow-y-auto", CARD_STYLE)}>
-          <h3 className="text-lg font-bold font-display mb-4 flex items-center gap-2">
-            <div className={cn("w-2 h-2 rounded-full animate-pulse", activeListTab === 'vibes' ? "bg-vibe-purple" : "bg-green-500")} />
-            {activeListTab === 'vibes' ? 'Happening Now' : 'Campus Locations'}
+        <div className={cn("flex-1 p-6 overflow-y-auto relative", CARD_STYLE)}>
+          {/* Background gradient accents */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-vibe-purple/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-white/5 to-transparent rounded-full blur-xl pointer-events-none" />
+          
+          <h3 className="text-lg font-bold font-display mb-5 flex items-center gap-3 relative">
+            <div className={cn("w-2.5 h-2.5 rounded-full", activeListTab === 'vibes' ? "bg-vibe-purple shadow-lg shadow-vibe-purple/50 animate-pulse" : "bg-green-500 animate-pulse")} />
+            <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              {activeListTab === 'vibes' ? 'Happening Now' : 'Campus Locations'}
+            </span>
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-4 relative">
             {activeListTab === 'locations' ? (
               filteredLocations.length === 0 ? (
                 <div className="text-center text-gray-500 py-10">No locations found</div>
@@ -1415,14 +1446,14 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   <div
                     key={loc.id}
                     onClick={() => setSelectedLoc(loc)}
-                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer group border border-transparent hover:border-white/5"
+                    className="p-4 rounded-2xl bg-gradient-to-br from-white/[0.12] to-white/[0.05] hover:from-white/[0.18] hover:to-white/[0.08] transition-all duration-300 cursor-pointer group border border-white/20 hover:border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_25px_rgba(255,255,255,0.1)]"
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-bold flex items-center gap-2">
                         {loc.name}
                         {joined.has(loc.id) && <CheckCircle className="w-4 h-4 text-green-400" />}
                       </span>
-                      <span className={cn("text-xs font-mono px-2 py-1 rounded bg-black/30", loc.occupancy > 80 ? 'text-red-400' : 'text-green-400')}>
+                      <span className={cn("text-xs font-mono px-2 py-1 rounded-lg", loc.occupancy > 80 ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10')}>
                         {loc.occupancy}%
                       </span>
                     </div>
@@ -1439,26 +1470,26 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   <div
                     key={event.id}
                     onClick={() => setSelectedLoc({ ...event, type: 'event' })}
-                    className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 transition cursor-pointer group border border-transparent hover:border-vibe-purple/20"
+                    className="p-4 rounded-2xl bg-gradient-to-br from-white/20 via-white/15 to-vibe-purple/20 hover:from-white/25 hover:via-white/20 hover:to-vibe-purple/30 transition-all duration-300 cursor-pointer group border border-vibe-purple/40 hover:border-vibe-purple/60 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:shadow-[0_0_30px_rgba(139,92,246,0.35)]"
                   >
                     <div className="flex justify-between items-start mb-1">
                       <div>
-                        <span className="font-bold flex items-center gap-2 text-vibe-purple">
+                        <span className="font-bold flex items-center gap-2 text-white">
                           {event.title}
                         </span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-gray-400 bg-black/20 px-1.5 py-0.5 rounded">{event.locationName}</span>
-                          <span className="text-xs text-gray-500">{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-xs text-gray-300 bg-white/10 px-2 py-0.5 rounded-lg border border-white/20">{event.locationName}</span>
+                          <span className="text-xs text-gray-400">{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
-                      {event.isMajor && <Zap className="w-4 h-4 text-amber-400 fill-amber-400/20" />}
+                      {event.isMajor && <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400/30" />}
                     </div>
-                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">{event.description}</p>
+                    <p className="text-xs text-gray-300 mt-2 line-clamp-2">{event.description}</p>
 
                     {/* Mini Actions */}
                     <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
                       {event.attendees?.includes(currentUser?.id) ? (
-                        <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Joined</span>
+                        <span className="text-xs text-green-400 flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded-lg"><CheckCircle className="w-3 h-3" /> Joined</span>
                       ) : (
                         <span className="text-xs text-gray-500">Tap to view & join</span>
                       )}
