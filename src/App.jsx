@@ -25,7 +25,9 @@ import {
   User as UserIcon,
   Ghost,
   BarChart3,
-  Settings
+  Settings,
+  Wifi,
+  MapPin
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -86,12 +88,11 @@ const mapEvent = (e) => ({
 
 // Fallback data (for offline/demo mode)
 const INITIAL_LOCATIONS = [
-  { id: '1', name: 'Tech Park Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 650, y: 465 }, color: 'text-vibe-cyan' },
-  { id: '2', name: 'Java Lounge', type: 'cafe', occupancy: 42, capacity: 150, desc: 'Fresh Brews • Fast WiFi', coords: { x: 950, y: 250 }, color: 'text-amber-400' },
-  { id: '3', name: 'Main Tech Park', type: 'gym', occupancy: 15, capacity: 200, desc: 'Innovation Center', coords: { x: 250, y: 670 }, color: 'text-vibe-rose' },
-  { id: '4', name: 'Innovation Hub', type: 'study', occupancy: 92, capacity: 80, desc: 'Hackathon in progress', coords: { x: 940, y: 530 }, color: 'text-vibe-purple' },
-  { id: '5', name: 'Sports Complex', type: 'other', occupancy: 10, capacity: 300, desc: 'Olympic Pool', coords: { x: 900, y: 650 }, color: 'text-vibe-rose' },
-  { id: '6', name: 'Academic Block A', type: 'study', occupancy: 30, capacity: 100, desc: 'CSE Dept', coords: { x: 250, y: 325 }, color: 'text-vibe-purple' },
+  { id: '1', name: 'Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 650, y: 450 }, color: 'text-vibe-cyan', icon: '📚', wifiSpeed: 85, crowdLevel: 'High', amenities: ['Silent Zone', 'AC', 'Power Outlets', 'Printers'], currentPeople: 390 },
+  { id: '2', name: 'Cafeteria', type: 'cafe', occupancy: 42, capacity: 150, desc: 'Fresh Food • Fast WiFi', coords: { x: 950, y: 250 }, color: 'text-amber-400', icon: '🍽️', wifiSpeed: 120, crowdLevel: 'Medium', amenities: ['Food Court', 'AC', 'Seating Area', 'Vending Machines'], currentPeople: 63 },
+  { id: '3', name: 'Ganga Gym', type: 'gym', occupancy: 35, capacity: 200, desc: 'Fitness Center • 24/7', coords: { x: 900, y: 620 }, color: 'text-vibe-rose', icon: '💪', wifiSpeed: 50, crowdLevel: 'Low', amenities: ['Cardio', 'Weights', 'Lockers', 'Showers'], currentPeople: 70 },
+  { id: '4', name: 'Flag Park', type: 'park', occupancy: 25, capacity: 500, desc: 'Central Gathering Area', coords: { x: 250, y: 650 }, color: 'text-emerald-400', icon: '🏳️', wifiSpeed: 30, crowdLevel: 'Low', amenities: ['Open Space', 'Benches', 'Shade Trees', 'Walking Path'], currentPeople: 125 },
+  { id: '5', name: 'Academic Block', type: 'study', occupancy: 65, capacity: 800, desc: 'Main Academic Building', coords: { x: 250, y: 320 }, color: 'text-vibe-purple', icon: '🎓', wifiSpeed: 100, crowdLevel: 'High', amenities: ['Lecture Halls', 'Labs', 'AC', 'Elevators'], currentPeople: 520 },
 ];
 
 const FORECAST = [50, 75, 90, 60, 45, 30, 80];
@@ -603,329 +604,304 @@ const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
   </nav>
 );
 
-const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false }) => (
-  <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
-    {/* Premium Gradient Background */}
-    <div className="absolute inset-0 bg-gradient-to-br from-[#0a0118] via-[#1a0f2e] to-[#0d0520]" />
+// 3D Building images and colors for map
+const BUILDING_IMAGES = {
+  'Library': 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
+  'Cafeteria': 'https://cdn-icons-png.flaticon.com/512/3170/3170733.png',
+  'Ganga Gym': 'https://cdn-icons-png.flaticon.com/512/2936/2936886.png',
+  'Flag Park': 'https://cdn-icons-png.flaticon.com/512/3310/3310331.png',
+  'Academic Block': 'https://cdn-icons-png.flaticon.com/512/2602/2602414.png',
+};
 
-    {/* Subtle Grid Pattern */}
-    <div className="absolute inset-0 opacity-10">
+const BUILDING_COLORS = {
+  'Library': { primary: '#22d3ee', secondary: '#06b6d4', glow: 'rgba(34,211,238,0.4)' },
+  'Cafeteria': { primary: '#fbbf24', secondary: '#f59e0b', glow: 'rgba(251,191,36,0.4)' },
+  'Ganga Gym': { primary: '#fb7185', secondary: '#f43f5e', glow: 'rgba(251,113,133,0.4)' },
+  'Flag Park': { primary: '#10b981', secondary: '#059669', glow: 'rgba(16,185,129,0.4)' },
+  'Academic Block': { primary: '#a855f7', secondary: '#7c3aed', glow: 'rgba(168,85,247,0.4)' },
+};
+
+const BentoMap = ({ locations = [], events = [], selected, onSelect, fullScreen = false }) => {
+  const safeLocations = Array.isArray(locations) ? locations : INITIAL_LOCATIONS;
+  const safeEvents = Array.isArray(events) ? events : [];
+
+  // Use INITIAL_LOCATIONS if no locations provided
+  const displayLocations = safeLocations.length > 0 ? safeLocations : INITIAL_LOCATIONS;
+
+  return (
+  <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
+    {/* Premium Dark Background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-[#030712] via-[#0f0a1f] to-[#0a0118]" />
+
+    {/* Grid Pattern */}
+    <div className="absolute inset-0 opacity-15">
       <div className="absolute inset-0" style={{
         backgroundImage: `
           linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px),
           linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)
         `,
-        backgroundSize: '40px 40px'
+        backgroundSize: '50px 50px'
       }} />
     </div>
 
-    {/* Glowing Ambient Light */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-vibe-purple/10 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-vibe-cyan/10 rounded-full blur-[100px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-vibe-rose/5 rounded-full blur-[120px]" />
+    {/* Ambient Glow */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-vibe-purple/20 rounded-full blur-[100px]" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-vibe-cyan/20 rounded-full blur-[100px]" />
     </div>
 
-    {/* Interactive Campus Map */}
-    <div className="absolute inset-0 flex items-center justify-center p-8">
-      <div className="relative w-full max-w-5xl aspect-[4/3]">
-        {/* Campus Buildings - Isometric Style */}
-        <svg className="w-full h-full" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            {/* Glow Filters */}
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="strongGlow">
-              <feGaussianBlur stdDeviation="8" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Building Gradients */}
-            <linearGradient id="purpleBuild" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#a855f7', stopOpacity: 0.8 }} />
-              <stop offset="100%" style={{ stopColor: '#7c3aed', stopOpacity: 0.3 }} />
-            </linearGradient>
-            <linearGradient id="cyanBuild" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 0.9 }} />
-              <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 0.4 }} />
-            </linearGradient>
-            <linearGradient id="amberBuild" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 0.8 }} />
-              <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 0.3 }} />
-            </linearGradient>
-            <linearGradient id="roseBuild" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style={{ stopColor: '#fb7185', stopOpacity: 0.8 }} />
-              <stop offset="100%" style={{ stopColor: '#f43f5e', stopOpacity: 0.3 }} />
-            </linearGradient>
-          </defs>
-
-          {/* Campus Ground */}
-          <rect x="50" y="50" width="1100" height="800" fill="rgba(15,10,30,0.4)" stroke="rgba(124,58,237,0.2)" strokeWidth="2" rx="20" />
-
-          {/* Pathways with Animation */}
-          <g opacity="0.4">
-            <path d="M 200 450 Q 400 400 600 450 T 1000 450" stroke="url(#purpleBuild)" strokeWidth="6" fill="none" strokeDasharray="12,8" filter="url(#softGlow)">
-              <animate attributeName="stroke-dashoffset" from="0" to="20" dur="2s" repeatCount="indefinite" />
-            </path>
-            <path d="M 600 200 L 600 700" stroke="url(#cyanBuild)" strokeWidth="6" fill="none" strokeDasharray="12,8" filter="url(#softGlow)">
-              <animate attributeName="stroke-dashoffset" from="0" to="20" dur="2s" repeatCount="indefinite" />
-            </path>
-            <path d="M 200 300 L 1000 300" stroke="rgba(124,58,237,0.3)" strokeWidth="4" fill="none" strokeDasharray="8,6">
-              <animate attributeName="stroke-dashoffset" from="0" to="14" dur="1.5s" repeatCount="indefinite" />
-            </path>
-          </g>
-
-          {/* Academic Block 1 - Isometric */}
-          <g filter="url(#softGlow)">
-            <path d="M 150 250 L 250 200 L 350 250 L 350 400 L 250 450 L 150 400 Z" fill="url(#purpleBuild)" stroke="#a855f7" strokeWidth="3" opacity="0.9" />
-            <path d="M 250 200 L 350 250 L 350 400 L 250 350 Z" fill="rgba(124,58,237,0.4)" />
-            <path d="M 150 250 L 250 200 L 250 350 L 150 400 Z" fill="rgba(124,58,237,0.6)" />
-            {/* Floating Label - Top */}
-            <rect x="190" y="175" width="120" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#a855f7" strokeWidth="1" />
-            <text x="250" y="192" fill="#e9d5ff" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">ACADEMIC</text>
-          </g>
-
-          {/* Library - Main Building (Larger, Central) */}
-          <g filter="url(#strongGlow)">
-            <path d="M 500 350 L 650 280 L 800 350 L 800 550 L 650 620 L 500 550 Z" fill="url(#cyanBuild)" stroke="#22d3ee" strokeWidth="4" opacity="0.95" />
-            <path d="M 650 280 L 800 350 L 800 550 L 650 480 Z" fill="rgba(6,182,212,0.5)" />
-            <path d="M 500 350 L 650 280 L 650 480 L 500 550 Z" fill="rgba(6,182,212,0.7)" />
-            {/* Floating Label - Top */}
-            <rect x="595" y="250" width="110" height="28" rx="14" fill="rgba(0,0,0,0.7)" stroke="#22d3ee" strokeWidth="1" />
-            <text x="650" y="269" fill="#cffafe" fontSize="14" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">LIBRARY</text>
-          </g>
-
-          {/* Cafeteria */}
-          <g filter="url(#softGlow)">
-            <path d="M 850 200 L 950 160 L 1050 200 L 1050 320 L 950 360 L 850 320 Z" fill="url(#amberBuild)" stroke="#fbbf24" strokeWidth="3" opacity="0.9" />
-            <path d="M 950 160 L 1050 200 L 1050 320 L 950 280 Z" fill="rgba(251,191,36,0.4)" />
-            <path d="M 850 200 L 950 160 L 950 280 L 850 320 Z" fill="rgba(251,191,36,0.6)" />
-            {/* Floating Label - Top */}
-            <rect x="885" y="130" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#fbbf24" strokeWidth="1" />
-            <text x="950" y="147" fill="#fef3c7" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">CAFETERIA</text>
-          </g>
-
-          {/* Sports Complex */}
-          <g filter="url(#softGlow)">
-            <ellipse cx="900" cy="650" rx="120" ry="80" fill="url(#roseBuild)" stroke="#fb7185" strokeWidth="3" opacity="0.9" />
-            <ellipse cx="900" cy="640" rx="80" ry="50" fill="rgba(251,113,133,0.2)" stroke="#fb7185" strokeWidth="2" />
-            {/* Floating Label - Top */}
-            <rect x="850" y="555" width="100" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#fb7185" strokeWidth="1" />
-            <text x="900" y="572" fill="#fecdd3" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">SPORTS</text>
-          </g>
-
-          {/* Tech Park */}
-          <g filter="url(#softGlow)">
-            <path d="M 150 600 L 250 560 L 350 600 L 350 720 L 250 760 L 150 720 Z" fill="rgba(168,85,247,0.3)" stroke="#a78bfa" strokeWidth="3" opacity="0.85" />
-            <path d="M 250 560 L 350 600 L 350 720 L 250 680 Z" fill="rgba(139,92,246,0.25)" />
-            <path d="M 150 600 L 250 560 L 250 680 L 150 720 Z" fill="rgba(139,92,246,0.4)" />
-            {/* Floating Label - Top */}
-            <rect x="185" y="530" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#a78bfa" strokeWidth="1" />
-            <text x="250" y="547" fill="#ddd6fe" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">TECH PARK</text>
-          </g>
-
-          {/* Innovation Hub */}
-          <g filter="url(#softGlow)">
-            <rect x="850" y="450" width="180" height="140" rx="12" fill="rgba(16,185,129,0.25)" stroke="#10b981" strokeWidth="2" opacity="0.85" />
-            <rect x="860" y="460" width="160" height="10" rx="5" fill="rgba(16,185,129,0.4)" />
-            {/* Floating Label - Top */}
-            <rect x="875" y="420" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#10b981" strokeWidth="1" />
-            <text x="940" y="437" fill="#d1fae5" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">INNOVATION</text>
-          </g>
-
-          {/* Major Events - Special Markers */}
-          {events?.filter(e => e.isMajor).map((event, idx) => (
-            <g key={event.id || idx} className="cursor-pointer transition-all" onClick={() => onSelect({ ...event, id: event.id, type: 'event' })}>
-              <circle cx={event.coords.x} cy={event.coords.y} r="45" fill="none" stroke="#f59e0b" className="animate-pulse" strokeWidth="2" opacity="0.6" />
-              <circle cx={event.coords.x} cy={event.coords.y} r="25" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" strokeWidth="3" filter="url(#softGlow)" />
-              <Zap cx={event.coords.x} cy={event.coords.y} className="w-8 h-8 text-amber-400 -translate-x-4 -translate-y-4" />
-
-              {/* Event Label - Improved */}
-              <rect x={event.coords.x - 70} y={event.coords.y + 50} width="140" height="28" rx="14" fill="#0f0f1a" stroke="#f59e0b" strokeWidth="1" className="drop-shadow-lg" />
-              <text x={event.coords.x} y={event.coords.y + 68} fill="white" fontSize="11" fontWeight="bold" textAnchor="middle" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{event.title}</text>
-            </g>
-          ))}
-
-          {/* Location Markers - Premium Style */}
-          {locations.map((loc, idx) => {
-            const isSelected = selected?.id === loc.id;
-            const pulseDelay = idx * 0.2;
-
-            return (
-              <g key={loc.id} className="cursor-pointer transition-all" onClick={() => onSelect(loc)}>
-                {/* Selection Pulse */}
-                {isSelected && (
-                  <>
-                    <circle cx={loc.coords.x} cy={loc.coords.y} r="70" fill="none" stroke="currentColor" className={cn("animate-ping", loc.color)} strokeWidth="3" opacity="0.3" />
-                    <circle cx={loc.coords.x} cy={loc.coords.y} r="50" fill="none" stroke="currentColor" className={cn(loc.color)} strokeWidth="2" opacity="0.5" />
-                  </>
-                )}
-
-                {/* Marker Base */}
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="35" fill="rgba(0,0,0,0.6)" stroke="currentColor" className={cn(loc.color)} strokeWidth="3" filter="url(#softGlow)" />
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="25" className={cn("fill-current", loc.color)} opacity="0.9" />
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="15" fill="rgba(0,0,0,0.4)" />
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="8" fill="white" opacity="0.95" />
-
-                {/* Occupancy Ring */}
-                <circle
-                  cx={loc.coords.x}
-                  cy={loc.coords.y}
-                  r="30"
-                  fill="none"
-                  stroke={loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981'}
-                  strokeWidth="4"
-                  strokeDasharray={`${(loc.occupancy / 100) * 188} 188`}
-                  transform={`rotate(-90 ${loc.coords.x} ${loc.coords.y})`}
-                  opacity="0.8"
-                />
-              </g>
-            );
-          })}
-        </svg>
+    {/* Map Title */}
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+      <div className="px-5 py-2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10">
+        <h2 className="text-lg font-bold bg-gradient-to-r from-vibe-purple via-vibe-cyan to-vibe-rose bg-clip-text text-transparent">
+          🗺️ Campus Map
+        </h2>
       </div>
     </div>
 
-    {/* Floating Location Cards */}
-    <div className="absolute inset-0 pointer-events-none">
-      {locations.map((loc, idx) => {
-        const isSelected = selected?.id === loc.id;
-        if (!isSelected) return null;
-
-        return (
-          <motion.div
-            key={loc.id}
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
-          >
-            <div className="bg-black/80 backdrop-blur-2xl border-2 border-white/20 rounded-3xl p-6 min-w-[320px] shadow-2xl">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">{loc.name}</h3>
-                  <p className="text-sm text-gray-400">{loc.desc}</p>
-                </div>
-                <button onClick={() => onSelect(null)} className="p-2 hover:bg-white/10 rounded-full transition">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-400">Occupancy</span>
-                    <span className={cn("text-sm font-bold",
-                      loc.occupancy > 70 ? "text-red-400" :
-                        loc.occupancy > 40 ? "text-amber-400" : "text-green-400"
-                    )}>{loc.occupancy}%</span>
-                  </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full transition-all",
-                        loc.occupancy > 70 ? "bg-red-500" :
-                          loc.occupancy > 40 ? "bg-amber-500" : "bg-green-500"
-                      )}
-                      style={{ width: `${loc.occupancy}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-white/5 rounded-xl p-3">
-                  <div className="text-gray-400 text-xs mb-1">Capacity</div>
-                  <div className="text-white font-bold">{loc.capacity}</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3">
-                  <div className="text-gray-400 text-xs mb-1">Type</div>
-                  <div className="text-white font-bold capitalize">{loc.type}</div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
-
-      {/* Floating Event Card */}
-      {selected?.type === 'event' && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
-        >
-          <div className="bg-[#f59e0b]/10 backdrop-blur-3xl border-2 border-[#f59e0b]/30 rounded-3xl p-6 min-w-[340px] shadow-[0_0_50px_-12px_rgba(245,158,11,0.5)]">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-bold">EVENT</span>
-                  <span className="text-xs text-amber-500/80 font-mono italic">#{selected.type}</span>
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-1">{selected.title}</h3>
-                <p className="text-sm text-gray-300 italic">📍 {selected.locationName}</p>
-              </div>
-              <button onClick={() => onSelect(null)} className="p-2 hover:bg-white/10 rounded-full transition">
-                <X className="w-5 h-5 text-white/50" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-sm text-gray-300">
-                {selected.description}
-              </div>
-
-              <div className="flex justify-between items-center text-xs">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map(j => <img key={j} className="w-8 h-8 rounded-full border-2 border-[#0A0A0F]" src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${j + 10}`} />)}
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/5">+24</div>
-                </div>
-                <button className="px-6 py-2 bg-amber-500 text-black font-bold rounded-xl hover:scale-105 transition shadow-lg shadow-amber-500/20">
-                  Count Me In!
-                </button>
-              </div>
-            </div>
+    {/* Map Container - Simple Flex Grid */}
+    <div className="absolute inset-0 pt-16 pb-16 px-4 flex items-center justify-center">
+      <div className="grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 max-w-5xl w-full">
+        {/* Render all 5 locations from INITIAL_LOCATIONS directly */}
+        {INITIAL_LOCATIONS.map((loc) => (
+          <div key={loc.id} className="flex items-center justify-center">
+            <BuildingCard 
+              loc={loc} 
+              isSelected={selected?.id === loc.id}
+              onSelect={onSelect}
+            />
           </div>
-        </motion.div>
-      )}
+        ))}
+        
+        {/* 6th slot - Show all vibes/events */}
+        <div className="flex items-center justify-center flex-wrap gap-2">
+          {safeEvents.length > 0 ? (
+            <div className="flex flex-wrap gap-2 justify-center items-center max-w-[160px]">
+              {safeEvents.slice(0, 4).map((event) => (
+                <motion.div
+                  key={event.id}
+                  className="cursor-pointer"
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onSelect({ ...event, type: 'event' })}
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-amber-500/40 rounded-full blur-lg animate-pulse" />
+                    <div className={cn(
+                      "rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/50 border-2 border-amber-300",
+                      safeEvents.length === 1 ? "w-16 h-16 md:w-20 md:h-20" : "w-12 h-12 md:w-14 md:h-14"
+                    )}>
+                      <Zap className={cn("text-white", safeEvents.length === 1 ? "w-8 h-8 md:w-10 md:h-10" : "w-5 h-5 md:w-6 md:h-6")} />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+              {safeEvents.length > 4 && (
+                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-white">
+                  +{safeEvents.length - 4}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+              <Zap className="w-8 h-8 text-white/20" />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
 
-    {/* Compact Legend */}
-    <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 px-4 py-3">
-      <div className="flex items-center gap-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-vibe-purple" />
-          <span className="text-white/70">Academic</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-vibe-cyan" />
-          <span className="text-white/70">Library</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-amber-400" />
-          <span className="text-white/70">Dining</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-vibe-rose" />
-          <span className="text-white/70">Sports</span>
-        </div>
+    {/* Event markers label */}
+    {safeEvents.length > 0 && (
+      <div className="absolute bottom-20 right-8 bg-black/70 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-amber-500/30 z-20">
+        <span className="text-xs font-bold text-amber-400">🎉 {safeEvents.length} Active Vibe{safeEvents.length > 1 ? 's' : ''}</span>
+      </div>
+    )}
+
+    {/* Legend */}
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 px-4 py-2 z-20">
+      <div className="flex items-center gap-4 text-[10px]">
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-purple" /><span className="text-white/70">Academic</span></div>
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-cyan" /><span className="text-white/70">Library</span></div>
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-white/70">Cafeteria</span></div>
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-rose" /><span className="text-white/70">Gym</span></div>
+        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-white/70">Park</span></div>
       </div>
     </div>
 
     {/* Compass */}
-    <div className="absolute top-4 right-4 w-12 h-12 bg-black/70 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center">
-      <Navigation className="w-5 h-5 text-vibe-cyan" />
+    <div className="absolute top-4 right-4 w-10 h-10 bg-black/70 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center z-20">
+      <Navigation className="w-4 h-4 text-vibe-cyan" />
     </div>
   </div>
 );
+};
+
+// Building Card Component
+const BuildingCard = ({ loc, isSelected, onSelect }) => {
+  const colors = BUILDING_COLORS[loc.name] || { primary: '#a855f7', secondary: '#7c3aed', glow: 'rgba(168,85,247,0.4)' };
+  const img = BUILDING_IMAGES[loc.name];
+
+  return (
+    <motion.div
+      className="cursor-pointer"
+      whileHover={{ scale: 1.08 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={() => onSelect(loc)}
+    >
+      <div 
+        className={cn(
+          "relative w-36 h-48 md:w-40 md:h-52 rounded-2xl overflow-hidden",
+          "bg-gradient-to-b from-white/10 to-black/60 backdrop-blur-lg",
+          "border-2 shadow-xl transition-all duration-300",
+          isSelected ? "border-white/50 ring-4 ring-white/20" : "border-white/10 hover:border-white/30"
+        )}
+        style={{
+          borderColor: isSelected ? colors.primary : undefined,
+          boxShadow: `0 15px 40px -10px ${colors.glow}`
+        }}
+      >
+        {/* 3D Image - Larger icons */}
+        <div className="flex items-center justify-center pt-4 pb-2">
+          <img 
+            src={img} 
+            alt={loc.name}
+            className="w-20 h-20 md:w-24 md:h-24 object-contain"
+            style={{ filter: `drop-shadow(0 6px 16px ${colors.glow})` }}
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        </div>
+
+        {/* Info */}
+        <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
+          <p className="text-sm font-bold text-center text-white truncate">{loc.name}</p>
+          
+          {/* Occupancy Bar */}
+          <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                backgroundColor: loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981',
+                width: `${loc.occupancy}%`
+              }}
+            />
+          </div>
+          <p className="text-[10px] text-center text-gray-400 mt-1">{loc.occupancy}% occupied</p>
+        </div>
+
+        {/* Status Dot */}
+        <div 
+          className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full"
+          style={{
+            backgroundColor: loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981',
+            boxShadow: `0 0 10px ${loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981'}`
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+// Location Detail Card Component
+const LocationDetailCard = ({ location, onClose }) => {
+  const colors = BUILDING_COLORS[location.name] || { primary: '#a855f7', secondary: '#7c3aed', glow: 'rgba(168,85,247,0.4)' };
+  const img = BUILDING_IMAGES[location.name];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div 
+        className="bg-black/95 backdrop-blur-2xl border-2 rounded-3xl p-6 min-w-[340px] max-w-[380px] shadow-2xl"
+        style={{ 
+          borderColor: colors.primary,
+          boxShadow: `0 0 80px ${colors.glow}`
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-start gap-4 mb-5">
+          <div 
+            className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ 
+              background: `linear-gradient(135deg, ${colors.primary}30, ${colors.secondary}20)`,
+              border: `1px solid ${colors.primary}40`
+            }}
+          >
+            <img 
+              src={img} 
+              alt={location.name}
+              className="w-14 h-14 object-contain"
+              style={{ filter: `drop-shadow(0 4px 12px ${colors.glow})` }}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xl font-bold text-white truncate">{location.name}</h3>
+            <p className="text-sm text-gray-400 mt-1">{location.desc}</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 hover:bg-white/10 rounded-full transition flex-shrink-0"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Occupancy */}
+        <div className="mb-5">
+          <div className="flex justify-between mb-2">
+            <span className="text-xs text-gray-400">Occupancy</span>
+            <span className={cn("text-sm font-bold",
+              location.occupancy > 70 ? "text-red-400" : location.occupancy > 40 ? "text-amber-400" : "text-green-400"
+            )}>{location.occupancy}%</span>
+          </div>
+          <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                backgroundColor: location.occupancy > 70 ? '#ef4444' : location.occupancy > 40 ? '#f59e0b' : '#10b981',
+                width: `${location.occupancy}%`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2 mb-5">
+          <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div className="text-gray-500 text-[10px] uppercase mb-1">Capacity</div>
+            <div className="text-white font-bold">{location.capacity}</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div className="text-gray-500 text-[10px] uppercase mb-1">Type</div>
+            <div className="text-white font-bold capitalize">{location.type}</div>
+          </div>
+          <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+            <div className="text-gray-500 text-[10px] uppercase mb-1">Status</div>
+            <div className={cn("font-bold",
+              location.occupancy > 70 ? "text-red-400" : location.occupancy > 40 ? "text-amber-400" : "text-green-400"
+            )}>
+              {location.occupancy > 70 ? "Busy" : location.occupancy > 40 ? "Moderate" : "Open"}
+            </div>
+          </div>
+        </div>
+
+        {/* Action */}
+        <button 
+          className="w-full py-3 rounded-xl font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          style={{ 
+            background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+            boxShadow: `0 4px 20px ${colors.glow}`
+          }}
+        >
+          Navigate Here
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 const CreateVibeModal = ({ isOpen, onClose, onCreate, locations }) => {
   const [name, setName] = useState('');
@@ -936,12 +912,11 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate, locations }) => {
 
   // Location coordinates mapping
   const locationCoords = {
-    'Academic Block': { x: 250, y: 325 },
-    'Library': { x: 650, y: 465 },
+    'Academic Block': { x: 250, y: 320 },
+    'Library': { x: 650, y: 450 },
     'Cafeteria': { x: 950, y: 250 },
-    'Sports Complex': { x: 900, y: 650 },
-    'Tech Park': { x: 250, y: 670 },
-    'Innovation Hub': { x: 940, y: 530 }
+    'Ganga Gym': { x: 900, y: 620 },
+    'Flag Park': { x: 250, y: 650 }
   };
 
   if (!isOpen) return null;
@@ -1080,100 +1055,239 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
   return (
     <main className="grid grid-cols-1 md:grid-cols-12 grid-rows-8 md:grid-rows-8 gap-6 h-auto md:min-h-[800px]">
       {/* Map */}
-      <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div className={cn("col-span-1 md:col-span-8 row-span-4 p-0 relative", CARD_STYLE)} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <BentoMap locations={locations} events={events} selected={selectedLoc} onSelect={setSelectedLoc} />
-        <AnimatePresence>
-          {selectedLoc && (
+      </motion.div>
+
+      {/* Selected Location/Event Popups - Two cards: Details and Check-in */}
+      <AnimatePresence>
+        {selectedLoc && selectedLoc.capacity && (
+          <>
+            {/* Details Card - Left Side */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute bottom-6 left-6 p-6 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-3xl w-80 shadow-2xl"
+              initial={{ opacity: 0, x: -20, y: 20 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, x: -20, y: 20 }}
+              className="fixed bottom-6 left-6 p-5 bg-black/85 backdrop-blur-2xl border border-white/20 rounded-3xl w-72 shadow-2xl z-[100]"
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-bold font-display">{selectedLoc.name || selectedLoc.title}</h3>
-                <button onClick={() => setSelectedLoc(null)} className="p-1 hover:bg-white/10 rounded-full"><X className="w-4 h-4" /></button>
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{selectedLoc.icon}</span>
+                  <div>
+                    <h3 className="text-lg font-bold font-display">{selectedLoc.name}</h3>
+                    <p className="text-xs text-gray-400">{selectedLoc.desc}</p>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-400 mb-4">{selectedLoc.desc || selectedLoc.description}</p>
 
-              {selectedLoc.type !== 'study' && selectedLoc.type !== 'chill' && selectedLoc.type !== 'event' ? (
-                // Location Actions
-                <>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                      <div className={cn("h-full w-[0%] transition-all duration-1000", selectedLoc.color?.replace('text', 'bg') || 'bg-gray-500')} style={{ width: `${selectedLoc.occupancy || 0}%` }} />
-                    </div>
-                    <span className="text-xs font-bold">{selectedLoc.occupancy || 0}%</span>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {/* WiFi Speed */}
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wifi className="w-4 h-4 text-vibe-cyan" />
+                    <span className="text-[10px] text-gray-400 uppercase">WiFi Speed</span>
                   </div>
-                  <button
-                    onClick={() => handleCheckIn(selectedLoc)}
-                    className={cn(
-                      "w-full py-3 font-bold rounded-xl transition",
-                      joined.has(selectedLoc.id)
-                        ? "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"
-                        : "bg-white text-black hover:bg-gray-200"
-                    )}
-                  >
-                    {joined.has(selectedLoc.id) ? "Check Out" : "Check In"}
-                  </button>
-                </>
-              ) : (
-                // Event Actions
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{selectedLoc.locationName || 'Campus'}</span>
-                    <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{new Date(selectedLoc.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  <p className="text-lg font-bold text-white">{selectedLoc.wifiSpeed || 50} <span className="text-xs text-gray-400">Mbps</span></p>
+                  <div className="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-gradient-to-r from-vibe-cyan to-vibe-purple" 
+                      style={{ width: `${Math.min((selectedLoc.wifiSpeed || 50) / 1.5, 100)}%` }} 
+                    />
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* Join/Leave Button */}
-                    <button
-                      onClick={() => {
-                        const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
-                        if (isJoined) onLeave(selectedLoc.id);
-                        else onJoin(selectedLoc.id);
-                      }}
-                      className={cn(
-                        "py-2 font-bold rounded-xl text-sm transition",
-                        selectedLoc.attendees?.includes(currentUser?.id)
-                          ? "bg-red-500/20 text-red-400 border border-red-500/50"
-                          : "bg-vibe-purple text-white"
-                      )}
-                    >
-                      {selectedLoc.attendees?.includes(currentUser?.id) ? "Leave" : "Join"}
-                    </button>
-
-                    {/* Message Button */}
-                    <button
-                      onClick={() => {
-                        const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
-                        if (!isJoined) {
-                          addNotification('Join the vibe to chat', 'info');
-                          return;
-                        }
-                        onOpenEventChat?.(selectedLoc);
-                      }}
-                      className="py-2 bg-white/10 text-white font-bold rounded-xl text-sm hover:bg-white/20 transition"
-                    >
-                      Message
-                    </button>
+                {/* Crowd Level */}
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-4 h-4 text-amber-400" />
+                    <span className="text-[10px] text-gray-400 uppercase">Crowd</span>
                   </div>
+                  <p className={cn(
+                    "text-lg font-bold",
+                    selectedLoc.crowdLevel === 'Low' ? 'text-emerald-400' :
+                    selectedLoc.crowdLevel === 'Medium' ? 'text-amber-400' : 'text-red-400'
+                  )}>{selectedLoc.crowdLevel || 'Medium'}</p>
+                  <div className="flex gap-1 mt-1">
+                    {[1, 2, 3].map((i) => (
+                      <div 
+                        key={i} 
+                        className={cn(
+                          "h-1.5 flex-1 rounded-full",
+                          i <= (selectedLoc.crowdLevel === 'Low' ? 1 : selectedLoc.crowdLevel === 'Medium' ? 2 : 3)
+                            ? selectedLoc.crowdLevel === 'Low' ? 'bg-emerald-400' :
+                              selectedLoc.crowdLevel === 'Medium' ? 'bg-amber-400' : 'bg-red-400'
+                            : 'bg-white/10'
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-                  {/* Delete Button (Creator Only) */}
-                  {selectedLoc.creator_id === currentUser?.id && (
-                    <button
-                      onClick={() => onDelete(selectedLoc.id)}
-                      className="w-full py-2 border border-red-500/20 text-red-400 text-xs rounded-xl hover:bg-red-500/10 transition"
-                    >
-                      Delete Vibe
-                    </button>
-                  )}
+              {/* People Count */}
+              <div className="p-3 bg-gradient-to-r from-white/5 to-white/10 rounded-xl border border-white/10 mb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-gray-400">Currently Occupying</p>
+                    <p className="text-2xl font-bold text-white">
+                      {selectedLoc.currentPeople || Math.round((selectedLoc.occupancy / 100) * selectedLoc.capacity)}
+                      <span className="text-sm text-gray-400"> / {selectedLoc.capacity}</span>
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 rounded-full bg-white/5 border-4 border-white/10 flex items-center justify-center">
+                    <span className={cn(
+                      "text-lg font-bold",
+                      selectedLoc.occupancy > 70 ? 'text-red-400' : selectedLoc.occupancy > 40 ? 'text-amber-400' : 'text-emerald-400'
+                    )}>{selectedLoc.occupancy}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Amenities */}
+              {selectedLoc.amenities && (
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase mb-2">Amenities</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedLoc.amenities.map((amenity, i) => (
+                      <span key={i} className="px-2 py-1 bg-white/5 rounded-lg text-[10px] text-gray-300 border border-white/10">
+                        {amenity}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+
+            {/* Check-in Card - Right of Details */}
+            <motion.div
+              initial={{ opacity: 0, x: 20, y: 20 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0, x: 20, y: 20 }}
+              className="fixed bottom-6 left-[320px] p-5 bg-black/85 backdrop-blur-2xl border border-white/20 rounded-3xl w-56 shadow-2xl z-[100]"
+            >
+              <button 
+                onClick={() => setSelectedLoc(null)} 
+                className="absolute top-3 right-3 p-1.5 hover:bg-white/10 rounded-full transition"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+
+              <div className="text-center mb-4">
+                <div className={cn(
+                  "w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-3",
+                  joined.has(selectedLoc.id) ? "bg-emerald-500/20 border-2 border-emerald-500/50" : "bg-white/10 border-2 border-white/20"
+                )}>
+                  <MapPin className={cn("w-8 h-8", joined.has(selectedLoc.id) ? "text-emerald-400" : "text-white/60")} />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">
+                  {joined.has(selectedLoc.id) ? "You're Here!" : "Check In"}
+                </h4>
+                <p className="text-xs text-gray-400">
+                  {joined.has(selectedLoc.id) 
+                    ? "Enjoying your time at " + selectedLoc.name
+                    : "Let others know you're at " + selectedLoc.name
+                  }
+                </p>
+              </div>
+
+              {/* Occupancy Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                  <span>Occupancy</span>
+                  <span>{selectedLoc.occupancy}%</span>
+                </div>
+                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className={cn("h-full rounded-full transition-all duration-500",
+                      selectedLoc.occupancy > 70 ? 'bg-red-500' : selectedLoc.occupancy > 40 ? 'bg-amber-500' : 'bg-emerald-500'
+                    )} 
+                    style={{ width: `${selectedLoc.occupancy}%` }} 
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleCheckIn(selectedLoc)}
+                className={cn(
+                  "w-full py-3 font-bold rounded-xl transition-all duration-300",
+                  joined.has(selectedLoc.id)
+                    ? "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"
+                    : "bg-gradient-to-r from-vibe-purple to-vibe-cyan text-white hover:shadow-lg hover:shadow-vibe-purple/30"
+                )}
+              >
+                {joined.has(selectedLoc.id) ? "Check Out" : "Check In Now"}
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Event Popup - Single card for events (user-created vibes without capacity) */}
+      <AnimatePresence>
+        {selectedLoc && !selectedLoc.capacity && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-6 left-6 p-6 bg-black/85 backdrop-blur-2xl border border-white/20 rounded-3xl w-80 shadow-2xl z-[100]"
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-bold font-display">{selectedLoc.title || selectedLoc.name}</h3>
+              <button onClick={() => setSelectedLoc(null)} className="p-1 hover:bg-white/10 rounded-full"><X className="w-4 h-4" /></button>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">{selectedLoc.description || selectedLoc.desc}</p>
+
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{selectedLoc.locationName || 'Campus'}</span>
+                <span className="text-xs bg-white/10 px-2 py-1 rounded-md mb-2 block w-fit">{new Date(selectedLoc.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
+                    if (isJoined) onLeave(selectedLoc.id);
+                    else onJoin(selectedLoc.id);
+                  }}
+                  className={cn(
+                    "py-2 font-bold rounded-xl text-sm transition",
+                    selectedLoc.attendees?.includes(currentUser?.id)
+                      ? "bg-red-500/20 text-red-400 border border-red-500/50"
+                      : "bg-vibe-purple text-white"
+                  )}
+                >
+                  {selectedLoc.attendees?.includes(currentUser?.id) ? "Leave" : "Join"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
+                    if (!isJoined) {
+                      addNotification('Join the vibe to chat', 'info');
+                      return;
+                    }
+                    onOpenEventChat?.(selectedLoc);
+                  }}
+                  className="py-2 bg-white/10 text-white font-bold rounded-xl text-sm hover:bg-white/20 transition"
+                >
+                  Message
+                </button>
+              </div>
+
+              {selectedLoc.creator_id === currentUser?.id && (
+                <button
+                  onClick={() => onDelete(selectedLoc.id)}
+                  className="w-full py-2 border border-red-500/20 text-red-400 text-xs rounded-xl hover:bg-red-500/10 transition"
+                >
+                  Delete Vibe
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Search & List */}
       <div className="col-span-1 md:col-span-4 row-span-4 flex flex-col gap-6">
@@ -1955,6 +2069,18 @@ export default function App() {
   const activeChannelRef = useRef(activeChannel);
   const channelLabelRef = useRef({});
 
+  // Load user data function
+  const loadUserData = async () => {
+    try {
+      const data = await user.getProfile();
+      setCurrentUser(data.user);
+      const stats = await user.getStats();
+      setUserStats(stats);
+    } catch (err) {
+      console.error('Error loading user data:', err);
+    }
+  };
+
   // Check for existing token and load user
   // Supabase Auth Listener
   useEffect(() => {
@@ -1975,17 +2101,6 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const loadUserData = async () => {
-    try {
-      const data = await user.getProfile();
-      setCurrentUser(data.user);
-      const stats = await user.getStats();
-      setUserStats(stats);
-    } catch (err) {
-      console.error('Error loading user data:', err);
-    }
-  };
 
   // Load locations from backend
   useEffect(() => {
@@ -2224,29 +2339,79 @@ export default function App() {
       return;
     }
 
-    if (activeCheckin) {
+    const isCurrentlyJoined = joined.has(loc.id);
+
+    // Helper function to update location occupancy
+    const updateLocationOccupancy = (locationId, increment) => {
+      setLocations(prevLocations => prevLocations.map(location => {
+        if (location.id === locationId) {
+          const currentPeople = (location.currentPeople || Math.round((location.occupancy / 100) * location.capacity));
+          const newPeople = Math.max(0, Math.min(location.capacity, currentPeople + increment));
+          const newOccupancy = Math.round((newPeople / location.capacity) * 100);
+          return {
+            ...location,
+            currentPeople: newPeople,
+            occupancy: newOccupancy
+          };
+        }
+        return location;
+      }));
+
+      // Also update selectedLoc if it's the same location
+      if (selectedLoc && selectedLoc.id === locationId) {
+        setSelectedLoc(prev => {
+          if (!prev || prev.id !== locationId) return prev;
+          const currentPeople = (prev.currentPeople || Math.round((prev.occupancy / 100) * prev.capacity));
+          const newPeople = Math.max(0, Math.min(prev.capacity, currentPeople + increment));
+          const newOccupancy = Math.round((newPeople / prev.capacity) * 100);
+          return {
+            ...prev,
+            currentPeople: newPeople,
+            occupancy: newOccupancy
+          };
+        });
+      }
+    };
+
+    if (isCurrentlyJoined) {
       // Check out
       try {
-        const result = await checkins.checkOut(activeCheckin.id, {});
-        setActiveCheckin(null);
+        if (activeCheckin && activeCheckin.locationId === loc.id) {
+          const result = await checkins.checkOut(activeCheckin.id, {});
+          setActiveCheckin(null);
+          addNotification(`Checked out! Earned ${result.coins_earned || 50} coins 🪙`);
 
-        // Find and update the location in joined set
-        const locationId = loc.id || activeCheckin.locationId;
+          // Reload user stats
+          try {
+            const stats = await user.getStats();
+            setUserStats(stats);
+          } catch (err) {
+            console.log('Could not reload stats');
+          }
+        } else {
+          // Fallback checkout (for demo/local mode)
+          addNotification(`Checked out from ${loc.name}!`);
+        }
+
+        // Remove from joined set
         const newJoined = new Set(joined);
-        newJoined.delete(locationId);
+        newJoined.delete(loc.id);
         setJoined(newJoined);
 
-        addNotification(`Checked out! Earned ${result.coins_earned || 50} coins 🪙`);
+        // Decrease occupancy
+        updateLocationOccupancy(loc.id, -1);
 
-        // Reload user stats
-        try {
-          const stats = await user.getStats();
-          setUserStats(stats);
-        } catch (err) {
-          console.log('Could not reload stats');
-        }
       } catch (err) {
-        addNotification(err.message, 'error');
+        // Even on error, allow local checkout
+        console.error(err);
+        const newJoined = new Set(joined);
+        newJoined.delete(loc.id);
+        setJoined(newJoined);
+        
+        // Decrease occupancy
+        updateLocationOccupancy(loc.id, -1);
+        
+        addNotification(`Checked out from ${loc.name}!`);
       }
     } else {
       // Check in
@@ -2270,11 +2435,19 @@ export default function App() {
           locationId: loc.id
         });
         setJoined(new Set(joined).add(loc.id));
+        
+        // Increase occupancy
+        updateLocationOccupancy(loc.id, 1);
+        
         addNotification(`Checked in to ${loc.name}! +${result.coins_earned || 20} coins 🪙`);
       } catch (err) {
         // Fallback to local check-in for demo
         console.error(err);
         setJoined(new Set(joined).add(loc.id));
+        
+        // Increase occupancy
+        updateLocationOccupancy(loc.id, 1);
+        
         addNotification(`Welcome to ${loc.name}!`);
       }
     }
