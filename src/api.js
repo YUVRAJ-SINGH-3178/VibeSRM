@@ -477,3 +477,36 @@ export default {
     setToken: () => { },
     getToken: () => { }
 };
+
+// Delete a message (only allowed for message author)
+chat.deleteMessage = async (messageId) => {
+    if (!messageId) throw new Error('Invalid message id');
+
+    // Avoid attempting server delete for optimistic client-only messages
+    if (String(messageId).startsWith('temp-')) {
+        throw new Error('Optimistic message — not persisted on server');
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+        // Use match to specify both id and sender_id together
+        const { data, error } = await supabase
+            .from('messages')
+            .delete()
+            .match({ id: messageId, sender_id: user.id })
+            .select()
+            .single();
+
+        if (error) {
+            // Surface Supabase/Postgres error for clearer debugging
+            throw error;
+        }
+        return data;
+    } catch (err) {
+        // Re-throw with a more descriptive message while keeping original details
+        const detail = err?.message || err?.details || JSON.stringify(err);
+        throw new Error(`Delete failed: ${detail}`);
+    }
+};
