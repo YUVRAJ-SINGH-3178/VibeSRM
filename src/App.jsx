@@ -24,6 +24,12 @@ import {
   Ghost,
   BarChart3,
   Settings,
+  Palette,
+  Shield,
+  Lock,
+  Moon,
+  Sun,
+  Globe,
   Wifi,
   MapPin
 } from 'lucide-react';
@@ -582,8 +588,11 @@ const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
     </div>
     <div className="mt-auto flex flex-col items-center gap-4">
       <button
-        onClick={() => alert('Settings coming soon! 🚀')}
-        className="p-3 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition"
+        onClick={() => setTab('settings')}
+        className={cn(
+          "p-3 rounded-xl transition",
+          active === 'settings' ? "text-white bg-vibe-purple/20 shadow-lg shadow-vibe-purple/20" : "text-gray-500 hover:text-white hover:bg-white/5"
+        )}
         title="Settings"
       >
         <Settings className="w-5 h-5" />
@@ -628,112 +637,112 @@ const BentoMap = ({ locations = [], events = [], selected, onSelect, fullScreen 
   const displayLocations = safeLocations.length > 0 ? safeLocations : INITIAL_LOCATIONS;
 
   return (
-  <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
-    {/* Premium Dark Background */}
-    <div className="absolute inset-0 bg-gradient-to-br from-[#030712] via-[#0f0a1f] to-[#0a0118]" />
+    <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
+      {/* Premium Dark Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#030712] via-[#0f0a1f] to-[#0a0118]" />
 
-    {/* Grid Pattern */}
-    <div className="absolute inset-0 opacity-15">
-      <div className="absolute inset-0" style={{
-        backgroundImage: `
+      {/* Grid Pattern */}
+      <div className="absolute inset-0 opacity-15">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
           linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px),
           linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)
         `,
-        backgroundSize: '50px 50px'
-      }} />
-    </div>
-
-    {/* Ambient Glow */}
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-vibe-purple/20 rounded-full blur-[100px]" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-vibe-cyan/20 rounded-full blur-[100px]" />
-    </div>
-
-    {/* Map Title */}
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-      <div className="px-5 py-2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10">
-        <h2 className="text-lg font-bold bg-gradient-to-r from-vibe-purple via-vibe-cyan to-vibe-rose bg-clip-text text-transparent">
-          🗺️ Campus Map
-        </h2>
+          backgroundSize: '50px 50px'
+        }} />
       </div>
-    </div>
 
-    {/* Map Container - Simple Flex Grid */}
-    <div className="absolute inset-0 pt-16 pb-16 px-4 flex items-center justify-center">
-      <div className="grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 max-w-5xl w-full">
-        {/* Render all 5 locations from INITIAL_LOCATIONS directly */}
-        {INITIAL_LOCATIONS.map((loc) => (
-          <div key={loc.id} className="flex items-center justify-center">
-            <BuildingCard 
-              loc={loc} 
-              isSelected={selected?.id === loc.id}
-              onSelect={onSelect}
-            />
-          </div>
-        ))}
-        
-        {/* 6th slot - Show all vibes/events */}
-        <div className="flex items-center justify-center flex-wrap gap-2">
-          {safeEvents.length > 0 ? (
-            <div className="flex flex-wrap gap-2 justify-center items-center max-w-[160px]">
-              {safeEvents.slice(0, 4).map((event) => (
-                <motion.div
-                  key={event.id}
-                  className="cursor-pointer"
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onSelect({ ...event, type: 'event' })}
-                >
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-amber-500/40 rounded-full blur-lg animate-pulse" />
-                    <div className={cn(
-                      "rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/50 border-2 border-amber-300",
-                      safeEvents.length === 1 ? "w-16 h-16 md:w-20 md:h-20" : "w-12 h-12 md:w-14 md:h-14"
-                    )}>
-                      <Zap className={cn("text-white", safeEvents.length === 1 ? "w-8 h-8 md:w-10 md:h-10" : "w-5 h-5 md:w-6 md:h-6")} />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              {safeEvents.length > 4 && (
-                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-white">
-                  +{safeEvents.length - 4}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-              <Zap className="w-8 h-8 text-white/20" />
-            </div>
-          )}
+      {/* Ambient Glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-vibe-purple/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-vibe-cyan/20 rounded-full blur-[100px]" />
+      </div>
+
+      {/* Map Title */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        <div className="px-5 py-2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10">
+          <h2 className="text-lg font-bold bg-gradient-to-r from-vibe-purple via-vibe-cyan to-vibe-rose bg-clip-text text-transparent">
+            🗺️ Campus Map
+          </h2>
         </div>
       </div>
-    </div>
 
-    {/* Event markers label */}
-    {safeEvents.length > 0 && (
-      <div className="absolute bottom-20 right-8 bg-black/70 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-amber-500/30 z-20">
-        <span className="text-xs font-bold text-amber-400">🎉 {safeEvents.length} Active Vibe{safeEvents.length > 1 ? 's' : ''}</span>
+      {/* Map Container - Simple Flex Grid */}
+      <div className="absolute inset-0 pt-16 pb-16 px-4 flex items-center justify-center">
+        <div className="grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 max-w-5xl w-full">
+          {/* Render all 5 locations from INITIAL_LOCATIONS directly */}
+          {INITIAL_LOCATIONS.map((loc) => (
+            <div key={loc.id} className="flex items-center justify-center">
+              <BuildingCard
+                loc={loc}
+                isSelected={selected?.id === loc.id}
+                onSelect={onSelect}
+              />
+            </div>
+          ))}
+
+          {/* 6th slot - Show all vibes/events */}
+          <div className="flex items-center justify-center flex-wrap gap-2">
+            {safeEvents.length > 0 ? (
+              <div className="flex flex-wrap gap-2 justify-center items-center max-w-[160px]">
+                {safeEvents.slice(0, 4).map((event) => (
+                  <motion.div
+                    key={event.id}
+                    className="cursor-pointer"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onSelect({ ...event, type: 'event' })}
+                  >
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-amber-500/40 rounded-full blur-lg animate-pulse" />
+                      <div className={cn(
+                        "rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/50 border-2 border-amber-300",
+                        safeEvents.length === 1 ? "w-16 h-16 md:w-20 md:h-20" : "w-12 h-12 md:w-14 md:h-14"
+                      )}>
+                        <Zap className={cn("text-white", safeEvents.length === 1 ? "w-8 h-8 md:w-10 md:h-10" : "w-5 h-5 md:w-6 md:h-6")} />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                {safeEvents.length > 4 && (
+                  <div className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xs font-bold text-white">
+                    +{safeEvents.length - 4}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                <Zap className="w-8 h-8 text-white/20" />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    )}
 
-    {/* Legend */}
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 px-4 py-2 z-20">
-      <div className="flex items-center gap-4 text-[10px]">
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-purple" /><span className="text-white/70">Academic</span></div>
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-cyan" /><span className="text-white/70">Library</span></div>
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-white/70">Cafeteria</span></div>
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-rose" /><span className="text-white/70">Gym</span></div>
-        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-white/70">Park</span></div>
+      {/* Event markers label */}
+      {safeEvents.length > 0 && (
+        <div className="absolute bottom-20 right-8 bg-black/70 backdrop-blur-xl rounded-lg px-3 py-1.5 border border-amber-500/30 z-20">
+          <span className="text-xs font-bold text-amber-400">🎉 {safeEvents.length} Active Vibe{safeEvents.length > 1 ? 's' : ''}</span>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 px-4 py-2 z-20">
+        <div className="flex items-center gap-4 text-[10px]">
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-purple" /><span className="text-white/70">Academic</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-cyan" /><span className="text-white/70">Library</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-white/70">Cafeteria</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-vibe-rose" /><span className="text-white/70">Gym</span></div>
+          <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-white/70">Park</span></div>
+        </div>
+      </div>
+
+      {/* Compass */}
+      <div className="absolute top-4 right-4 w-10 h-10 bg-black/70 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center z-20">
+        <Navigation className="w-4 h-4 text-vibe-cyan" />
       </div>
     </div>
-
-    {/* Compass */}
-    <div className="absolute top-4 right-4 w-10 h-10 bg-black/70 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center z-20">
-      <Navigation className="w-4 h-4 text-vibe-cyan" />
-    </div>
-  </div>
-);
+  );
 };
 
 // Building Card Component
@@ -748,7 +757,7 @@ const BuildingCard = ({ loc, isSelected, onSelect }) => {
       whileTap={{ scale: 0.95 }}
       onClick={() => onSelect(loc)}
     >
-      <div 
+      <div
         className={cn(
           "relative w-36 h-48 md:w-40 md:h-52 rounded-2xl overflow-hidden",
           "bg-gradient-to-b from-white/10 to-black/60 backdrop-blur-lg",
@@ -762,8 +771,8 @@ const BuildingCard = ({ loc, isSelected, onSelect }) => {
       >
         {/* 3D Image - Larger icons */}
         <div className="flex items-center justify-center pt-4 pb-2">
-          <img 
-            src={img} 
+          <img
+            src={img}
             alt={loc.name}
             className="w-20 h-20 md:w-24 md:h-24 object-contain"
             style={{ filter: `drop-shadow(0 6px 16px ${colors.glow})` }}
@@ -774,10 +783,10 @@ const BuildingCard = ({ loc, isSelected, onSelect }) => {
         {/* Info */}
         <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
           <p className="text-sm font-bold text-center text-white truncate">{loc.name}</p>
-          
+
           {/* Occupancy Bar */}
           <div className="mt-2 h-2 bg-white/20 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full rounded-full transition-all duration-500"
               style={{
                 backgroundColor: loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981',
@@ -789,7 +798,7 @@ const BuildingCard = ({ loc, isSelected, onSelect }) => {
         </div>
 
         {/* Status Dot */}
-        <div 
+        <div
           className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full"
           style={{
             backgroundColor: loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981',
@@ -813,24 +822,24 @@ const LocationDetailCard = ({ location, onClose }) => {
       exit={{ opacity: 0, scale: 0.9 }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div 
+      <div
         className="bg-black/95 backdrop-blur-2xl border-2 rounded-3xl p-6 min-w-[340px] max-w-[380px] shadow-2xl"
-        style={{ 
+        style={{
           borderColor: colors.primary,
           boxShadow: `0 0 80px ${colors.glow}`
         }}
       >
         {/* Header */}
         <div className="flex items-start gap-4 mb-5">
-          <div 
+          <div
             className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ 
+            style={{
               background: `linear-gradient(135deg, ${colors.primary}30, ${colors.secondary}20)`,
               border: `1px solid ${colors.primary}40`
             }}
           >
-            <img 
-              src={img} 
+            <img
+              src={img}
               alt={location.name}
               className="w-14 h-14 object-contain"
               style={{ filter: `drop-shadow(0 4px 12px ${colors.glow})` }}
@@ -840,8 +849,8 @@ const LocationDetailCard = ({ location, onClose }) => {
             <h3 className="text-xl font-bold text-white truncate">{location.name}</h3>
             <p className="text-sm text-gray-400 mt-1">{location.desc}</p>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-full transition flex-shrink-0"
           >
             <X className="w-5 h-5 text-gray-400" />
@@ -888,9 +897,9 @@ const LocationDetailCard = ({ location, onClose }) => {
         </div>
 
         {/* Action */}
-        <button 
+        <button
           className="w-full py-3 rounded-xl font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          style={{ 
+          style={{
             background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
             boxShadow: `0 4px 20px ${colors.glow}`
           }}
@@ -1089,9 +1098,9 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   </div>
                   <p className="text-lg font-bold text-white">{selectedLoc.wifiSpeed || 50} <span className="text-xs text-gray-400">Mbps</span></p>
                   <div className="mt-1 h-1 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full bg-gradient-to-r from-vibe-cyan to-vibe-purple" 
-                      style={{ width: `${Math.min((selectedLoc.wifiSpeed || 50) / 1.5, 100)}%` }} 
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-vibe-cyan to-vibe-purple"
+                      style={{ width: `${Math.min((selectedLoc.wifiSpeed || 50) / 1.5, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -1105,12 +1114,12 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   <p className={cn(
                     "text-lg font-bold",
                     selectedLoc.crowdLevel === 'Low' ? 'text-emerald-400' :
-                    selectedLoc.crowdLevel === 'Medium' ? 'text-amber-400' : 'text-red-400'
+                      selectedLoc.crowdLevel === 'Medium' ? 'text-amber-400' : 'text-red-400'
                   )}>{selectedLoc.crowdLevel || 'Medium'}</p>
                   <div className="flex gap-1 mt-1">
                     {[1, 2, 3].map((i) => (
-                      <div 
-                        key={i} 
+                      <div
+                        key={i}
                         className={cn(
                           "h-1.5 flex-1 rounded-full",
                           i <= (selectedLoc.crowdLevel === 'Low' ? 1 : selectedLoc.crowdLevel === 'Medium' ? 2 : 3)
@@ -1165,8 +1174,8 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
               exit={{ opacity: 0, x: 20, y: 20 }}
               className="fixed bottom-6 left-[320px] p-5 bg-black/85 backdrop-blur-2xl border border-white/20 rounded-3xl w-56 shadow-2xl z-[100]"
             >
-              <button 
-                onClick={() => setSelectedLoc(null)} 
+              <button
+                onClick={() => setSelectedLoc(null)}
                 className="absolute top-3 right-3 p-1.5 hover:bg-white/10 rounded-full transition"
               >
                 <X className="w-4 h-4 text-gray-400" />
@@ -1183,7 +1192,7 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   {joined.has(selectedLoc.id) ? "You're Here!" : "Check In"}
                 </h4>
                 <p className="text-xs text-gray-400">
-                  {joined.has(selectedLoc.id) 
+                  {joined.has(selectedLoc.id)
                     ? "Enjoying your time at " + selectedLoc.name
                     : "Let others know you're at " + selectedLoc.name
                   }
@@ -1197,11 +1206,11 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
                   <span>{selectedLoc.occupancy}%</span>
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={cn("h-full rounded-full transition-all duration-500",
                       selectedLoc.occupancy > 70 ? 'bg-red-500' : selectedLoc.occupancy > 40 ? 'bg-amber-500' : 'bg-emerald-500'
-                    )} 
-                    style={{ width: `${selectedLoc.occupancy}%` }} 
+                    )}
+                    style={{ width: `${selectedLoc.occupancy}%` }}
                   />
                 </div>
               </div>
@@ -1437,7 +1446,7 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
       </div>
 
       {/* Daily Activity */}
-      <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "flex flex-col") }>
+      <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "flex flex-col")}>
         <div className="absolute top-0 right-0 w-56 h-56 bg-gradient-to-br from-vibe-purple/20 to-transparent blur-3xl rounded-full" />
         <div className="absolute bottom-0 left-0 w-44 h-44 bg-gradient-to-tr from-white/10 to-transparent blur-2xl rounded-full" />
         <div className="relative z-10 flex items-center justify-between mb-4">
@@ -1503,7 +1512,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
 
   const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
   const activeChannelLabel = channelList.find((ch) => ch.id === activeChannel)?.label || activeChannel;
-  
+
   // Check if this is a custom channel (dm or event) that can be left
   const isCustomChannel = activeChannel?.startsWith('dm-') || activeChannel?.startsWith('event-');
   const isDefaultChannel = DEFAULT_CHAT_CHANNELS.some(ch => ch.id === activeChannel);
@@ -1644,7 +1653,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                   "w-1.5 h-1.5 rounded-full transition-all",
                   activeChannel === channel.id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
                 )} />
-                <span 
+                <span
                   className="text-[13px] font-medium flex-1"
                   onClick={() => setActiveChannel(channel.id)}
                 >
@@ -1756,7 +1765,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
               <p className="text-gray-300 font-medium">No messages yet</p>
               <p className="text-gray-600 text-sm mt-1">Be the first to say something!</p>
             </div>
-              ) : (
+          ) : (
             messages.map((msg, idx) => {
               const isMe = msg.sender_id === currentUser.id;
               const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
@@ -1779,7 +1788,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                       />
                     )}
                   </div>
-                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}> 
+                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}>
                     {showAvatar && !isMe && (
                       <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
                     )}
@@ -1890,78 +1899,258 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
 
 const AchievementsView = ({ userStats }) => {
   const achievements = [
-    { id: 'first-checkin', title: 'First Check-in', desc: 'Checked in for the first time', earned: true },
-    { id: 'streak-5', title: '5-Day Streak', desc: 'Keep the momentum going', earned: false },
-    { id: 'vibe-creator', title: 'Vibe Creator', desc: 'Created your first vibe', earned: true }
+    { id: 'first-checkin', title: 'First Check-in', desc: 'Checked in for the first time', earned: true, icon: '📍', color: 'from-emerald-400 to-teal-500', reward: 50 },
+    { id: 'streak-5', title: 'Streak Master', desc: 'Reach a 5-day study streak', earned: false, progress: 60, icon: '🔥', color: 'from-orange-400 to-red-500', reward: 500 },
+    { id: 'vibe-creator', title: 'Vibe Creator', desc: 'Create your first vibe event', earned: true, icon: '✨', color: 'from-violet-400 to-fuchsia-500', reward: 200 },
+    { id: 'night-owl', title: 'Night Owl', desc: 'Study after 10 PM', earned: false, progress: 30, icon: '🦉', color: 'from-indigo-400 to-blue-500', reward: 300 },
+    { id: 'social-butterfly', title: 'Social Butterfly', desc: 'Join 5 different vibes', earned: false, progress: 20, icon: '🦋', color: 'from-pink-400 to-rose-500', reward: 1000 }
   ];
 
   const leaderboard = [
-    { id: 'u1', name: 'Riya Sharma', score: 1280 },
-    { id: 'u2', name: 'Arjun Mehta', score: 1180 },
-    { id: 'u3', name: 'You', score: userStats?.overview?.totalCoins || 0 }
+    { id: 'u1', name: 'Riya Sharma', score: 1280, rank: 1, change: 'up', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Riya' },
+    { id: 'u2', name: 'Arjun Mehta', score: 1180, rank: 2, change: 'same', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun' },
+    { id: 'u3', name: 'You', score: userStats?.overview?.totalCoins || 0, rank: 3, change: 'up', avatar: null },
+    { id: 'u4', name: 'Priya P.', score: 950, rank: 4, change: 'down', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Priya' },
+    { id: 'u5', name: 'Dev Patel', score: 820, rank: 5, change: 'down', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dev' },
   ];
 
-  const badges = ['Top 10%', 'Night Owl', 'Streak Master'];
+  const badges = [
+    { name: 'Top 10%', color: 'from-amber-400 to-yellow-600', icon: '🌟' },
+    { name: 'Night Owl', color: 'from-indigo-500 to-blue-700', icon: '🌙' },
+    { name: 'Streak 10', color: 'from-rose-500 to-red-700', icon: '🔥' },
+    { name: 'Early Bird', color: 'from-sky-400 to-cyan-600', icon: '🐦' }
+  ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-12 gap-6 h-auto">
-      <div className={cn("col-span-1 md:col-span-4 p-6", CARD_STYLE)}>
-        <h3 className="text-lg font-display font-bold mb-4">Your Stats</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
-            <span className="text-sm text-gray-400">Coins</span>
-            <span className="text-xl font-bold text-vibe-purple">{userStats?.overview?.totalCoins || 0}</span>
-          </div>
-          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
-            <span className="text-sm text-gray-400">Streak</span>
-            <span className="text-xl font-bold text-vibe-cyan">{userStats?.overview?.currentStreak || 0}</span>
-          </div>
-          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
-            <span className="text-sm text-gray-400">Studied</span>
-            <span className="text-xl font-bold text-amber-400">{(userStats?.overview?.totalHours || 0).toFixed(1)}h</span>
-          </div>
-        </div>
-      </div>
+    <div className="h-full overflow-y-auto pr-2 custom-scrollbar pb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
 
-      <div className={cn("col-span-1 md:col-span-5 p-6", CARD_STYLE)}>
-        <h3 className="text-lg font-display font-bold mb-4">Achievements</h3>
-        <div className="space-y-3">
-          {achievements.map(a => (
-            <div key={a.id} className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
-              <div>
-                <p className={cn("font-semibold", a.earned ? "text-white" : "text-gray-400")}>{a.title}</p>
-                <p className="text-xs text-gray-500 mt-1">{a.desc}</p>
+        {/* Left Column: Hero Stats */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Holographic Level Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02, rotateY: 5 }}
+            className="relative overflow-hidden rounded-[2.5rem] p-8 aspect-[4/5] flex flex-col items-center justify-center text-center group bg-[#0f0f13] border border-white/5 shadow-2xl perspective-1000"
+          >
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-violet-600/20 rounded-full blur-[80px] group-hover:bg-violet-600/30 transition-colors duration-700" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-600/10 rounded-full blur-[80px] group-hover:bg-fuchsia-600/20 transition-colors duration-700" />
+
+            {/* Spinning Rings HUD */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] border border-white/10 rounded-full border-t-vibe-purple/50 animate-[spin_8s_linear_infinite]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] h-[240px] border border-white/5 rounded-full border-b-vibe-cyan/50 animate-[spin_12s_linear_infinite_reverse]" />
+
+            <div className="relative z-10 space-y-6">
+              <div className="relative w-36 h-36 mx-auto perspective-1000">
+                <motion.div
+                  className="w-full h-full relative preserve-3d"
+                  animate={{ rotateY: [0, 10, -10, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 animate-pulse blur-xl opacity-50" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#2a2a35] to-[#15151a] p-1 shadow-2xl border border-white/10 flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_3s_infinite]" />
+                    <Award className="w-16 h-16 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+                  </div>
+
+                  {/* Floating Level Badge */}
+                  <div className="absolute -bottom-2 inset-x-0 flex justify-center">
+                    <div className="bg-black/80 backdrop-blur border border-white/20 px-4 py-1 rounded-full text-xs font-bold text-white shadow-lg">
+                      Voyager
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-              <span className={cn("text-xs font-bold px-3 py-1 rounded-full",
-                a.earned ? "bg-emerald-500/20 text-emerald-400" : "bg-white/10 text-gray-400"
-              )}>
-                {a.earned ? "Unlocked" : "Locked"}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <div className={cn("col-span-1 md:col-span-3 p-6", CARD_STYLE)}>
-        <h3 className="text-lg font-display font-bold mb-4">Leaderboard</h3>
-        <div className="space-y-3">
-          {leaderboard.map((l, idx) => (
-            <div key={l.id} className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/10">
-              <span className="text-sm text-gray-300">#{idx + 1} {l.name}</span>
-              <span className="text-sm font-bold text-vibe-purple">{l.score}</span>
+              <div>
+                <h2 className="text-5xl font-display font-bold text-white tracking-tight drop-shadow-md">12</h2>
+                <p className="text-gray-400 text-sm font-medium uppercase tracking-widest mt-1">Current Level</p>
+              </div>
+
+              {/* XP Bar */}
+              <div className="w-full space-y-2">
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  <span>2,450 XP</span>
+                  <span>5,000 XP</span>
+                </div>
+                <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '65%' }}
+                    transition={{ duration: 1.5, ease: "circOut" }}
+                    className="h-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 relative"
+                  >
+                    <div className="absolute top-0 right-0 bottom-0 w-1 bg-white/50 blur-[1px]" />
+                  </motion.div>
+                </div>
+              </div>
             </div>
-          ))}
+          </motion.div>
+
+          {/* Stats Cards 2.0 */}
+          <div className="grid grid-cols-2 gap-4">
+            <motion.div className="p-5 rounded-[2rem] bg-[#0c0c14] border border-white/5 relative overflow-hidden group hover:bg-[#12121c] transition-colors">
+              <div className="absolute top-2 right-2 p-2 rounded-full bg-amber-500/10 text-amber-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              </div>
+              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Total Coins</p>
+              <p className="text-3xl font-bold text-white">{userStats?.overview?.totalCoins || 0}</p>
+              <div className="mt-2 text-[10px] text-green-400 flex items-center gap-1">
+                <span className="w-0.5 h-3 bg-green-500/50 rounded-full" /> +120 today
+              </div>
+            </motion.div>
+
+            <motion.div className="p-5 rounded-[2rem] bg-[#0c0c14] border border-white/5 relative overflow-hidden group hover:bg-[#12121c] transition-colors">
+              <div className="absolute top-2 right-2 p-2 rounded-full bg-orange-500/10 text-orange-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              </div>
+              <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Day Streak</p>
+              <p className="text-3xl font-bold text-white">{userStats?.overview?.currentStreak || 0}</p>
+              <div className="mt-2 text-[10px] text-gray-500 flex items-center gap-1">
+                Best: {Math.max(userStats?.overview?.currentStreak || 0, 14)} days
+              </div>
+            </motion.div>
+          </div>
         </div>
-        <div className="mt-5">
-          <h4 className="text-sm font-semibold text-gray-300 mb-2">Badges</h4>
-          <div className="flex flex-wrap gap-2">
-            {badges.map(b => (
-              <span key={b} className="text-[10px] px-3 py-1 rounded-full bg-white/10 text-gray-300">{b}</span>
+
+        {/* Middle Column: Premium Achievement List */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-2xl font-display font-bold text-white">Milestones</h3>
+            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 font-mono">2 / 5</span>
+          </div>
+
+          <div className="space-y-4">
+            {achievements.map((item, idx) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + (idx * 0.1) }}
+                className={cn(
+                  "relative p-1 rounded-[2rem] transition-all duration-300 group",
+                  item.earned ? "bg-gradient-to-r from-white/10 to-white/5" : "bg-white/5 hover:bg-white/10"
+                )}
+              >
+                <div className={cn(
+                  "relative rounded-[1.8rem] p-4 flex items-center gap-4 h-full",
+                  item.earned ? "bg-[#0a0a0f]" : "bg-[#0a0a0f]/80"
+                )}>
+
+                  {/* Icon Container */}
+                  <div className={cn(
+                    "w-14 h-14 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl shadow-lg relative overflow-hidden",
+                    item.earned ? `bg-gradient-to-br ${item.color}` : "bg-white/5"
+                  )}>
+                    {item.earned && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
+                    <span className={cn(item.earned ? "grayscale-0 scale-110" : "grayscale opacity-50 scale-90")}>{item.icon}</span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h4 className={cn("font-bold text-base", item.earned ? "text-white" : "text-gray-400")}>{item.title}</h4>
+                      {item.earned ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />
+                      ) : (
+                        <div className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                          +{item.reward} 🪙
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 truncate">{item.desc}</p>
+
+                    {!item.earned && item.progress > 0 && (
+                      <div className="mt-3 relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className={cn("absolute inset-y-0 left-0 bg-gradient-to-r", item.color)}
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
-    </motion.div>
+
+        {/* Right Column: Leaderboard & Badges */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Leaderboard Panel */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-[#0c0c14] border border-white/10 rounded-[2.5rem] p-6 relative overflow-hidden flex flex-col"
+          >
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-vibe-cyan/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex items-center justify-between mb-6 relative z-10">
+              <h3 className="text-xl font-display font-bold text-white">Top 5</h3>
+              <button className="text-xs text-vibe-purple hover:text-white transition">View All</button>
+            </div>
+
+            <div className="space-y-4 relative z-10 flex-1">
+              {leaderboard.map((user, i) => (
+                <div key={user.id} className="flex items-center gap-3 group">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border",
+                    i === 0 ? "bg-yellow-500/20 text-yellow-500 border-yellow-500/50" :
+                      i === 1 ? "bg-gray-400/20 text-gray-300 border-gray-400/50" :
+                        i === 2 ? "bg-amber-700/20 text-amber-600 border-amber-700/50" :
+                          "bg-white/5 text-gray-500 border-transparent"
+                  )}>
+                    {user.rank}
+                  </div>
+
+                  <div className="relative">
+                    <img src={user.avatar || `https://api.dicebear.com/7.x/notionists/svg?seed=user`} className="w-9 h-9 rounded-full bg-black object-cover border border-white/10" />
+                    {i < 3 && <div className="absolute -top-1 -right-1 text-[10px]">👑</div>}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className={cn("text-sm font-medium truncate", user.id === 'u3' ? "text-vibe-purple" : "text-white")}>{user.name}</p>
+                    <p className="text-[10px] text-gray-500">{user.score} XP</p>
+                  </div>
+
+                  <div className={cn(
+                    "text-[10px] font-bold",
+                    user.change === 'up' ? "text-green-500" : user.change === 'down' ? "text-red-500" : "text-gray-600"
+                  )}>
+                    {user.change === 'up' ? '▲' : user.change === 'down' ? '▼' : '-'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* 3D Badges Collection */}
+          <div className="bg-[#0c0c14] border border-white/10 rounded-[2.5rem] p-6 relative overflow-hidden">
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Badges</h3>
+            <div className="flex flex-wrap gap-3">
+              {badges.map((b) => (
+                <motion.div
+                  key={b.name}
+                  whileHover={{ y: -5, rotateX: 10 }}
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer transform transition-all border-b-4 border-black/50 active:border-b-0 active:translate-y-1 bg-gradient-to-br",
+                    b.color
+                  )}
+                  title={b.name}
+                >
+                  <span className="text-xl drop-shadow-md">{b.icon}</span>
+                </motion.div>
+              ))}
+              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center border-dashed text-gray-500">
+                <Plus className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div >
+    </div >
   );
 };
 
@@ -2049,6 +2238,284 @@ const SocialView = ({ events, onChatWith, onJoinEvent, onOpenEventChat, currentU
     </div>
   </motion.div>
 );
+
+const SettingsView = ({ currentUser, onLogout, onUpdateProfile }) => {
+  const [subTab, setSubTab] = useState('account');
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    fullName: currentUser?.full_name || currentUser?.fullName || '',
+    username: currentUser?.username || '',
+    bio: currentUser?.bio || '',
+    email: currentUser?.email || ''
+  });
+
+  const tabs = [
+    { id: 'account', label: 'Account', icon: UserIcon },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'security', label: 'Security', icon: Shield }
+  ];
+
+  const handleSave = async () => {
+    setLoading(true);
+    // Simulate save
+    await new Promise(r => setTimeout(r, 1000));
+    onUpdateProfile?.(form);
+    setLoading(false);
+  };
+
+  const renderSection = () => {
+    switch (subTab) {
+      case 'account':
+        return (
+          <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-500">
+            <div>
+              <h3 className="text-3xl font-display font-bold text-white">Profile Settings</h3>
+              <p className="text-gray-400 mt-2">Manage your public profile and personal details.</p>
+            </div>
+
+            <div className="flex items-center gap-8 mb-8 group cursor-pointer relative w-fit">
+              <div className="w-28 h-28 rounded-full border-4 border-white/5 overflow-hidden shadow-2xl relative">
+                <img src={currentUser?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${form.username || 'user'}`} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold backdrop-blur-sm">CHANGE</div>
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white">{form.fullName || 'Your Name'}</h4>
+                <p className="text-vibe-purple font-medium mb-2">@{form.username || 'username'}</p>
+                <div className="flex gap-2">
+                  <span className="px-3 py-1 bg-white/5 rounded-full text-xs text-gray-400 border border-white/5">{currentUser?.email}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Full Name</label>
+                <div className="relative group">
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-vibe-purple transition-colors" />
+                  <input
+                    value={form.fullName}
+                    onChange={e => setForm({ ...form, fullName: e.target.value })}
+                    className="w-full bg-[#15151a] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white focus:border-vibe-purple focus:ring-1 focus:ring-vibe-purple transition outline-none font-medium"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Username</label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-vibe-purple transition-colors font-bold">@</span>
+                  <input
+                    value={form.username}
+                    onChange={e => setForm({ ...form, username: e.target.value })}
+                    className="w-full bg-[#15151a] border border-white/5 rounded-2xl pl-10 pr-4 py-4 text-white focus:border-vibe-purple focus:ring-1 focus:ring-vibe-purple transition outline-none font-medium"
+                    placeholder="johndoe"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Bio</label>
+                <textarea
+                  value={form.bio}
+                  onChange={e => setForm({ ...form, bio: e.target.value })}
+                  rows={4}
+                  className="w-full bg-[#15151a] border border-white/5 rounded-2xl px-4 py-4 text-white focus:border-vibe-purple focus:ring-1 focus:ring-vibe-purple transition outline-none resize-none font-medium"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-white/5 flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="px-8 py-4 bg-white text-black font-bold rounded-2xl hover:scale-105 active:scale-95 transition flex items-center gap-2 shadow-lg shadow-white/10"
+              >
+                {loading ? <span className="animate-spin">⏳</span> : <CheckCircle className="w-5 h-5" />}
+                Save Changes
+              </button>
+            </div>
+          </div>
+        );
+      case 'appearance':
+        return (
+          <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-500">
+            <div>
+              <h3 className="text-3xl font-display font-bold text-white">Visual Preferences</h3>
+              <p className="text-gray-400 mt-2">Customize how VibeSRM looks and feels.</p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Theme</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 rounded-3xl bg-vibe-purple/10 border border-vibe-purple/40 relative cursor-pointer ring-2 ring-vibe-purple ring-offset-2 ring-offset-[#0c0c14]">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-vibe-purple/20 flex items-center justify-center text-vibe-purple">
+                      <Moon className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">Dark Nebula</h4>
+                      <p className="text-xs text-vibe-purple/80 font-bold mt-1">Active</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6 rounded-3xl bg-white/5 border border-white/5 relative cursor-pointer hover:bg-white/10 transition opacity-50 grayscale hover:grayscale-0">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400">
+                      <Sun className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">Light Mode</h4>
+                      <p className="text-xs text-gray-500 mt-1">Coming Soon</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Accent Color</label>
+              <div className="p-6 rounded-3xl bg-[#15151a] border border-white/5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-vibe-purple to-vibe-cyan flex items-center justify-center text-white shadow-lg">
+                      <Palette className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white">Brand Color</h4>
+                      <p className="text-sm text-gray-500">Choose your vibe signature.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    {['bg-vibe-purple', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500'].map((c, i) => (
+                      <div key={c} className={cn(
+                        "w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition border-2 border-transparent hover:border-white shadow-lg",
+                        c,
+                        i === 0 && "ring-2 ring-white ring-offset-2 ring-offset-[#15151a]"
+                      )} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'notifications':
+        return (
+          <div className="space-y-8 max-w-2xl animate-in fade-in slide-in-from-right-4 duration-500">
+            <div>
+              <h3 className="text-3xl font-display font-bold text-white">Notifications</h3>
+              <p className="text-gray-400 mt-2">Choose what updates you want to receive.</p>
+            </div>
+
+            <div className="space-y-4">
+              {['Event Reminders', 'Chat Messages', 'Friend Requests', 'Leaderboard Updates', 'Vibe Recommendations'].map((item, i) => (
+                <div key={item} className="flex items-center justify-between p-5 rounded-3xl bg-[#15151a] border border-white/5 hover:border-white/10 transition group">
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center",
+                      i === 0 ? "bg-amber-500/20 text-amber-500" :
+                        i === 1 ? "bg-vibe-cyan/20 text-vibe-cyan" :
+                          "bg-white/10 text-gray-400"
+                    )}>
+                      <Bell className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-white">{item}</span>
+                  </div>
+                  <div className={cn(
+                    "w-14 h-8 rounded-full p-1 cursor-pointer transition-colors",
+                    i < 3 ? "bg-vibe-purple" : "bg-white/10"
+                  )}>
+                    <div className={cn(
+                      "w-6 h-6 bg-white rounded-full shadow-lg transition-transform",
+                      i < 3 ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      default: return (
+        <div className="flex flex-col items-center justify-center h-[500px] text-center">
+          <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <Lock className="w-10 h-10 text-gray-500" />
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
+          <p className="text-gray-500 max-w-sm">This section is currently under development. Stay tuned for updates!</p>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="h-full grid grid-cols-12 gap-6 lg:gap-10 pb-20">
+      {/* Sidebar */}
+      <div className="col-span-12 md:col-span-4 lg:col-span-3">
+        <div className="bg-[#0c0c14] border border-white/10 rounded-[2.5rem] p-6 h-full min-h-[600px] flex flex-col sticky top-0">
+          <div className="flex items-center gap-4 mb-10 px-2 mt-2">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-vibe-purple to-vibe-cyan flex items-center justify-center shadow-lg shadow-vibe-purple/20">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-display font-bold text-white leading-none">Settings</h2>
+              <p className="text-xs text-gray-500 mt-1">v1.2.0-beta</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 flex-1">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setSubTab(tab.id)}
+                className={cn(
+                  "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 text-left relative overflow-hidden group",
+                  subTab === tab.id
+                    ? "bg-[#1a1a24] text-white shadow-inner"
+                    : "text-gray-500 hover:text-white hover:bg-white/5"
+                )}
+              >
+                {subTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-vibe-purple rounded-r-full" />}
+                <div className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-lg",
+                  subTab === tab.id ? "bg-vibe-purple text-white shadow-vibe-purple/20" : "bg-white/5 group-hover:bg-white/10"
+                )}>
+                  <tab.icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <span className="font-bold block text-sm">{tab.label}</span>
+                </div>
+                {subTab === tab.id && <div className="text-vibe-purple"><div className="w-1.5 h-1.5 rounded-full bg-vibe-purple animate-pulse" /></div>}
+              </button>
+            ))}
+          </div>
+
+          <div className="pt-6 border-t border-white/10 mt-4">
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition group border border-transparent hover:border-red-500/20"
+            >
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition">
+                <LogOut className="w-5 h-5" />
+              </div>
+              <span className="font-bold text-sm">Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="col-span-12 md:col-span-8 lg:col-span-9 bg-[#0c0c14] border border-white/10 rounded-[2.5rem] p-8 md:p-12 overflow-y-auto custom-scrollbar relative min-h-[800px]">
+        <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none select-none">
+          <Settings className="w-[400px] h-[400px] text-white" />
+        </div>
+        <div className="relative z-10 h-full">
+          {renderSection()}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 const FullMapView = ({ locations, events, selected, onSelect }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={cn("h-[800px]", CARD_STYLE, "p-0")}>
@@ -2429,10 +2896,10 @@ export default function App() {
         const newJoined = new Set(joined);
         newJoined.delete(loc.id);
         setJoined(newJoined);
-        
+
         // Decrease occupancy
         updateLocationOccupancy(loc.id, -1);
-        
+
         addNotification(`Checked out from ${loc.name}!`);
       }
     } else {
@@ -2457,19 +2924,19 @@ export default function App() {
           locationId: loc.id
         });
         setJoined(new Set(joined).add(loc.id));
-        
+
         // Increase occupancy
         updateLocationOccupancy(loc.id, 1);
-        
+
         addNotification(`Checked in to ${loc.name}! +${result.coins_earned || 20} coins 🪙`);
       } catch (err) {
         // Fallback to local check-in for demo
         console.error(err);
         setJoined(new Set(joined).add(loc.id));
-        
+
         // Increase occupancy
         updateLocationOccupancy(loc.id, 1);
-        
+
         addNotification(`Welcome to ${loc.name}!`);
       }
     }
@@ -2522,12 +2989,12 @@ export default function App() {
   const handleLeaveChannel = (channelId) => {
     // Remove the channel from dmChannels
     setDmChannels((prev) => prev.filter((ch) => ch.id !== channelId));
-    
+
     // Switch to global channel if the user was in the channel they're leaving
     if (activeChannel === channelId) {
       setActiveChannel('global');
     }
-    
+
     // Show notification
     const channelLabel = dmChannels.find((ch) => ch.id === channelId)?.label || channelId;
     addNotification(`Left "${channelLabel}" 👋`);
@@ -2578,6 +3045,8 @@ export default function App() {
         return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} addNotificationItem={addNotificationItem} onLeaveChannel={handleLeaveChannel} />;
       case 'achievements':
         return <AchievementsView userStats={userStats} />;
+      case 'settings':
+        return <SettingsView currentUser={currentUser} onLogout={handleLogout} onUpdateProfile={handleSaveProfile} />;
       default:
         return <DashboardView locations={locations} events={eventsData} />;
     }
