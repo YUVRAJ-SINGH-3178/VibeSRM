@@ -77,7 +77,7 @@ graph TD
     subgraph Backend_Cloud
         RT --> DB[(PostgreSQL)]
         DB --> Auth[Supabase Auth]
-    </div>
+    end
 ```
 
 ---
