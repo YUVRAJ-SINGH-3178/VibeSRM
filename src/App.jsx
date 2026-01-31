@@ -240,224 +240,262 @@ const NavBar = ({ active, setTab }) => (
 
 const BentoMap = ({ locations, selected, onSelect, fullScreen = false }) => (
   <div className={cn("w-full h-full relative overflow-hidden rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
-    {/* Gradient Background */}
-    <div className="absolute inset-0 bg-gradient-to-br from-[#0f0a1e] via-[#1a1535] to-[#0a0514]" />
+    {/* Premium Gradient Background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-[#0a0118] via-[#1a0f2e] to-[#0d0520]" />
 
-    {/* Animated Grid */}
-    <div className="absolute inset-0 opacity-20">
+    {/* Subtle Grid Pattern */}
+    <div className="absolute inset-0 opacity-10">
       <div className="absolute inset-0" style={{
         backgroundImage: `
-          linear-gradient(rgba(124,58,237,0.1) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(124,58,237,0.1) 1px, transparent 1px)
+          linear-gradient(rgba(124,58,237,0.3) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(124,58,237,0.3) 1px, transparent 1px)
         `,
-        backgroundSize: '50px 50px'
+        backgroundSize: '40px 40px'
       }} />
     </div>
 
-    {/* Glowing Orbs Background */}
-    <div className="absolute inset-0 overflow-hidden opacity-30">
-      <div className="absolute top-20 left-20 w-64 h-64 bg-vibe-purple/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-vibe-cyan/20 rounded-full blur-3xl" />
-      <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-vibe-rose/10 rounded-full blur-3xl" />
+    {/* Glowing Ambient Light */}
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-vibe-purple/10 rounded-full blur-[100px]" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-vibe-cyan/10 rounded-full blur-[100px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-vibe-rose/5 rounded-full blur-[120px]" />
     </div>
 
-    {/* Campus Buildings */}
-    <svg className="w-full h-full absolute inset-0 pointer-events-none" viewBox="0 0 1000 800">
-      <defs>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style={{ stopColor: 'rgba(124,58,237,0.3)', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: 'rgba(124,58,237,0.05)', stopOpacity: 1 }} />
-        </linearGradient>
-        <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style={{ stopColor: 'rgba(6,182,212,0.3)', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: 'rgba(6,182,212,0.05)', stopOpacity: 1 }} />
-        </linearGradient>
-        <linearGradient id="amberGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style={{ stopColor: 'rgba(251,191,36,0.3)', stopOpacity: 1 }} />
-          <stop offset="100%" style={{ stopColor: 'rgba(251,191,36,0.05)', stopOpacity: 1 }} />
-        </linearGradient>
-      </defs>
+    {/* Interactive Campus Map */}
+    <div className="absolute inset-0 flex items-center justify-center p-8">
+      <div className="relative w-full max-w-5xl aspect-[4/3]">
+        {/* Campus Buildings - Isometric Style */}
+        <svg className="w-full h-full" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            {/* Glow Filters */}
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="strongGlow">
+              <feGaussianBlur stdDeviation="8" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
 
-      {/* Academic Block 1 */}
-      <g opacity="0.6">
-        <rect x="80" y="120" width="180" height="140" fill="url(#purpleGrad)" stroke="rgba(124,58,237,0.6)" strokeWidth="2" rx="12" />
-        <rect x="85" y="125" width="170" height="8" fill="rgba(124,58,237,0.4)" rx="4" />
-        <text x="170" y="200" fill="rgba(168,85,247,0.9)" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">ACADEMIC 1</text>
-        <text x="170" y="220" fill="rgba(168,85,247,0.5)" fontSize="11" textAnchor="middle" fontFamily="system-ui">Tech Dept</text>
-      </g>
+            {/* Building Gradients */}
+            <linearGradient id="purpleBuild" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#a855f7', stopOpacity: 0.8 }} />
+              <stop offset="100%" style={{ stopColor: '#7c3aed', stopOpacity: 0.3 }} />
+            </linearGradient>
+            <linearGradient id="cyanBuild" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#22d3ee', stopOpacity: 0.9 }} />
+              <stop offset="100%" style={{ stopColor: '#06b6d4', stopOpacity: 0.4 }} />
+            </linearGradient>
+            <linearGradient id="amberBuild" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#fbbf24', stopOpacity: 0.8 }} />
+              <stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 0.3 }} />
+            </linearGradient>
+            <linearGradient id="roseBuild" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style={{ stopColor: '#fb7185', stopOpacity: 0.8 }} />
+              <stop offset="100%" style={{ stopColor: '#f43f5e', stopOpacity: 0.3 }} />
+            </linearGradient>
+          </defs>
 
-      {/* Library - Main Building */}
-      <g opacity="0.7">
-        <rect x="350" y="280" width="220" height="180" fill="url(#cyanGrad)" stroke="rgba(6,182,212,0.7)" strokeWidth="3" rx="16" filter="url(#glow)" />
-        <rect x="360" y="290" width="200" height="12" fill="rgba(6,182,212,0.5)" rx="6" />
-        <circle cx="460" cy="370" r="40" fill="rgba(6,182,212,0.1)" stroke="rgba(6,182,212,0.3)" strokeWidth="2" />
-        <text x="460" y="365" fill="rgba(34,211,238,1)" fontSize="20" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">LIBRARY</text>
-        <text x="460" y="385" fill="rgba(34,211,238,0.6)" fontSize="12" textAnchor="middle" fontFamily="system-ui">Central Hub</text>
-      </g>
+          {/* Campus Ground */}
+          <rect x="50" y="50" width="1100" height="800" fill="rgba(15,10,30,0.4)" stroke="rgba(124,58,237,0.2)" strokeWidth="2" rx="20" />
 
-      {/* Cafeteria */}
-      <g opacity="0.6">
-        <rect x="650" y="150" width="160" height="120" fill="url(#amberGrad)" stroke="rgba(251,191,36,0.6)" strokeWidth="2" rx="12" />
-        <rect x="655" y="155" width="150" height="8" fill="rgba(251,191,36,0.4)" rx="4" />
-        <text x="730" y="215" fill="rgba(251,191,36,0.9)" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">CAFETERIA</text>
-        <text x="730" y="235" fill="rgba(251,191,36,0.5)" fontSize="11" textAnchor="middle" fontFamily="system-ui">Food Court</text>
-      </g>
+          {/* Pathways with Animation */}
+          <g opacity="0.4">
+            <path d="M 200 450 Q 400 400 600 450 T 1000 450" stroke="url(#purpleBuild)" strokeWidth="6" fill="none" strokeDasharray="12,8" filter="url(#softGlow)">
+              <animate attributeName="stroke-dashoffset" from="0" to="20" dur="2s" repeatCount="indefinite" />
+            </path>
+            <path d="M 600 200 L 600 700" stroke="url(#cyanBuild)" strokeWidth="6" fill="none" strokeDasharray="12,8" filter="url(#softGlow)">
+              <animate attributeName="stroke-dashoffset" from="0" to="20" dur="2s" repeatCount="indefinite" />
+            </path>
+            <path d="M 200 300 L 1000 300" stroke="rgba(124,58,237,0.3)" strokeWidth="4" fill="none" strokeDasharray="8,6">
+              <animate attributeName="stroke-dashoffset" from="0" to="14" dur="1.5s" repeatCount="indefinite" />
+            </path>
+          </g>
 
-      {/* Sports Complex */}
-      <g opacity="0.6">
-        <rect x="700" y="500" width="200" height="150" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)" strokeWidth="2" rx="12" />
-        <rect x="705" y="505" width="190" height="8" fill="rgba(239,68,68,0.3)" rx="4" />
-        <circle cx="800" cy="575" r="30" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.3)" strokeWidth="1.5" />
-        <text x="800" y="580" fill="rgba(248,113,113,0.9)" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">SPORTS</text>
-      </g>
+          {/* Academic Block 1 - Isometric */}
+          <g filter="url(#softGlow)">
+            <path d="M 150 250 L 250 200 L 350 250 L 350 400 L 250 450 L 150 400 Z" fill="url(#purpleBuild)" stroke="#a855f7" strokeWidth="3" opacity="0.9" />
+            <path d="M 250 200 L 350 250 L 350 400 L 250 350 Z" fill="rgba(124,58,237,0.4)" />
+            <path d="M 150 250 L 250 200 L 250 350 L 150 400 Z" fill="rgba(124,58,237,0.6)" />
+            <circle cx="250" cy="325" r="40" fill="rgba(168,85,247,0.2)" stroke="#a855f7" strokeWidth="2" />
+            <text x="250" y="335" fill="#e9d5ff" fontSize="18" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">ACADEMIC</text>
+          </g>
 
-      {/* Tech Park */}
-      <g opacity="0.6">
-        <rect x="100" y="500" width="180" height="130" fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.5)" strokeWidth="2" rx="12" />
-        <rect x="105" y="505" width="170" height="8" fill="rgba(168,85,247,0.3)" rx="4" />
-        <text x="190" y="570" fill="rgba(192,132,252,0.9)" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">TECH PARK</text>
-      </g>
+          {/* Library - Main Building (Larger, Central) */}
+          <g filter="url(#strongGlow)">
+            <path d="M 500 350 L 650 280 L 800 350 L 800 550 L 650 620 L 500 550 Z" fill="url(#cyanBuild)" stroke="#22d3ee" strokeWidth="4" opacity="0.95" />
+            <path d="M 650 280 L 800 350 L 800 550 L 650 480 Z" fill="rgba(6,182,212,0.5)" />
+            <path d="M 500 350 L 650 280 L 650 480 L 500 550 Z" fill="rgba(6,182,212,0.7)" />
+            <circle cx="650" cy="465" r="60" fill="rgba(34,211,238,0.15)" stroke="#22d3ee" strokeWidth="3" />
+            <text x="650" y="460" fill="#cffafe" fontSize="24" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">LIBRARY</text>
+            <text x="650" y="485" fill="#67e8f9" fontSize="14" textAnchor="middle" fontFamily="system-ui">Central Hub</text>
+          </g>
 
-      {/* Innovation Hub */}
-      <g opacity="0.6">
-        <rect x="650" y="350" width="150" height="110" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.5)" strokeWidth="2" rx="12" />
-        <rect x="655" y="355" width="140" height="8" fill="rgba(16,185,129,0.3)" rx="4" />
-        <text x="725" y="410" fill="rgba(52,211,153,0.9)" fontSize="14" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">INNOVATION</text>
-        <text x="725" y="428" fill="rgba(52,211,153,0.5)" fontSize="11" textAnchor="middle" fontFamily="system-ui">Hub</text>
-      </g>
+          {/* Cafeteria */}
+          <g filter="url(#softGlow)">
+            <path d="M 850 200 L 950 160 L 1050 200 L 1050 320 L 950 360 L 850 320 Z" fill="url(#amberBuild)" stroke="#fbbf24" strokeWidth="3" opacity="0.9" />
+            <path d="M 950 160 L 1050 200 L 1050 320 L 950 280 Z" fill="rgba(251,191,36,0.4)" />
+            <path d="M 850 200 L 950 160 L 950 280 L 850 320 Z" fill="rgba(251,191,36,0.6)" />
+            <text x="950" y="250" fill="#fef3c7" fontSize="18" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">CAFETERIA</text>
+          </g>
 
-      {/* Pathways */}
-      <path d="M 260 190 Q 350 240 460 320" stroke="rgba(124,58,237,0.2)" strokeWidth="4" fill="none" strokeDasharray="8,8" opacity="0.5">
-        <animate attributeName="stroke-dashoffset" from="0" to="16" dur="1s" repeatCount="indefinite" />
-      </path>
-      <path d="M 570 370 L 650 240" stroke="rgba(6,182,212,0.2)" strokeWidth="4" fill="none" strokeDasharray="8,8" opacity="0.5">
-        <animate attributeName="stroke-dashoffset" from="0" to="16" dur="1s" repeatCount="indefinite" />
-      </path>
-      <path d="M 460 460 Q 550 500 700 575" stroke="rgba(251,191,36,0.2)" strokeWidth="4" fill="none" strokeDasharray="8,8" opacity="0.5">
-        <animate attributeName="stroke-dashoffset" from="0" to="16" dur="1s" repeatCount="indefinite" />
-      </path>
-    </svg>
+          {/* Sports Complex */}
+          <g filter="url(#softGlow)">
+            <ellipse cx="900" cy="650" rx="120" ry="80" fill="url(#roseBuild)" stroke="#fb7185" strokeWidth="3" opacity="0.9" />
+            <ellipse cx="900" cy="640" rx="80" ry="50" fill="rgba(251,113,133,0.2)" stroke="#fb7185" strokeWidth="2" />
+            <text x="900" y="655" fill="#fecdd3" fontSize="20" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">SPORTS</text>
+          </g>
 
-    {/* Location Markers */}
-    <svg className="w-full h-full absolute inset-0 pointer-events-none" viewBox="0 0 1000 800">
+          {/* Tech Park */}
+          <g filter="url(#softGlow)">
+            <path d="M 150 600 L 250 560 L 350 600 L 350 720 L 250 760 L 150 720 Z" fill="rgba(168,85,247,0.3)" stroke="#a78bfa" strokeWidth="3" opacity="0.85" />
+            <path d="M 250 560 L 350 600 L 350 720 L 250 680 Z" fill="rgba(139,92,246,0.25)" />
+            <path d="M 150 600 L 250 560 L 250 680 L 150 720 Z" fill="rgba(139,92,246,0.4)" />
+            <text x="250" y="670" fill="#ddd6fe" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">TECH PARK</text>
+          </g>
+
+          {/* Innovation Hub */}
+          <g filter="url(#softGlow)">
+            <rect x="850" y="450" width="180" height="140" rx="12" fill="rgba(16,185,129,0.25)" stroke="#10b981" strokeWidth="2" opacity="0.85" />
+            <rect x="860" y="460" width="160" height="10" rx="5" fill="rgba(16,185,129,0.4)" />
+            <text x="940" y="530" fill="#d1fae5" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">INNOVATION</text>
+            <text x="940" y="550" fill="#6ee7b7" fontSize="12" textAnchor="middle" fontFamily="system-ui">Hub</text>
+          </g>
+
+          {/* Location Markers - Premium Style */}
+          {locations.map((loc, idx) => {
+            const isSelected = selected?.id === loc.id;
+            const pulseDelay = idx * 0.2;
+
+            return (
+              <g key={loc.id} className="cursor-pointer transition-all" onClick={() => onSelect(loc)}>
+                {/* Selection Pulse */}
+                {isSelected && (
+                  <>
+                    <circle cx={loc.coords.x} cy={loc.coords.y} r="70" fill="none" stroke="currentColor" className={cn("animate-ping", loc.color)} strokeWidth="3" opacity="0.3" />
+                    <circle cx={loc.coords.x} cy={loc.coords.y} r="50" fill="none" stroke="currentColor" className={cn(loc.color)} strokeWidth="2" opacity="0.5" />
+                  </>
+                )}
+
+                {/* Marker Base */}
+                <circle cx={loc.coords.x} cy={loc.coords.y} r="35" fill="rgba(0,0,0,0.6)" stroke="currentColor" className={cn(loc.color)} strokeWidth="3" filter="url(#softGlow)" />
+                <circle cx={loc.coords.x} cy={loc.coords.y} r="25" className={cn("fill-current", loc.color)} opacity="0.9" />
+                <circle cx={loc.coords.x} cy={loc.coords.y} r="15" fill="rgba(0,0,0,0.4)" />
+                <circle cx={loc.coords.x} cy={loc.coords.y} r="8" fill="white" opacity="0.95" />
+
+                {/* Occupancy Ring */}
+                <circle
+                  cx={loc.coords.x}
+                  cy={loc.coords.y}
+                  r="30"
+                  fill="none"
+                  stroke={loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981'}
+                  strokeWidth="4"
+                  strokeDasharray={`${(loc.occupancy / 100) * 188} 188`}
+                  transform={`rotate(-90 ${loc.coords.x} ${loc.coords.y})`}
+                  opacity="0.8"
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+
+    {/* Floating Location Cards */}
+    <div className="absolute inset-0 pointer-events-none">
       {locations.map((loc, idx) => {
         const isSelected = selected?.id === loc.id;
+        if (!isSelected) return null;
+
         return (
-          <g key={loc.id} className="pointer-events-auto cursor-pointer transition-all hover:opacity-100" onClick={() => onSelect(loc)}>
-            {/* Pulsing ring for selected */}
-            {isSelected && (
-              <>
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="60" stroke="currentColor" fill="none" className={cn("animate-ping opacity-20", loc.color)} strokeWidth="2" />
-                <circle cx={loc.coords.x} cy={loc.coords.y} r="45" stroke="currentColor" fill="none" className={cn("opacity-30", loc.color)} strokeWidth="1.5" />
-              </>
-            )}
+          <motion.div
+            key={loc.id}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
+          >
+            <div className="bg-black/80 backdrop-blur-2xl border-2 border-white/20 rounded-3xl p-6 min-w-[320px] shadow-2xl">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-1">{loc.name}</h3>
+                  <p className="text-sm text-gray-400">{loc.desc}</p>
+                </div>
+                <button onClick={() => onSelect(null)} className="p-2 hover:bg-white/10 rounded-full transition">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            {/* Outer glow ring */}
-            <circle cx={loc.coords.x} cy={loc.coords.y} r="32" stroke="currentColor" fill="none" className={cn("opacity-20", loc.color)} strokeWidth="2" />
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-400">Occupancy</span>
+                    <span className={cn("text-sm font-bold",
+                      loc.occupancy > 70 ? "text-red-400" :
+                        loc.occupancy > 40 ? "text-amber-400" : "text-green-400"
+                    )}>{loc.occupancy}%</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full transition-all",
+                        loc.occupancy > 70 ? "bg-red-500" :
+                          loc.occupancy > 40 ? "bg-amber-500" : "bg-green-500"
+                      )}
+                      style={{ width: `${loc.occupancy}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
 
-            {/* Middle ring */}
-            <circle cx={loc.coords.x} cy={loc.coords.y} r="22" stroke="currentColor" fill="rgba(0,0,0,0.5)" className={cn("opacity-40", loc.color)} strokeWidth="2" />
-
-            {/* Main marker with gradient */}
-            <circle cx={loc.coords.x} cy={loc.coords.y} r="16" className={cn("fill-current", loc.color)} filter="url(#glow)" />
-
-            {/* Inner highlight */}
-            <circle cx={loc.coords.x - 3} cy={loc.coords.y - 3} r="5" fill="rgba(255,255,255,0.6)" />
-
-            {/* Center dot */}
-            <circle cx={loc.coords.x} cy={loc.coords.y} r="6" fill="white" className="opacity-90" />
-
-            {/* Location label with background */}
-            <rect
-              x={loc.coords.x - 50}
-              y={loc.coords.y - 55}
-              width="100"
-              height="24"
-              fill="rgba(0,0,0,0.7)"
-              stroke="currentColor"
-              className={cn("opacity-90", loc.color)}
-              strokeWidth="1"
-              rx="12"
-            />
-            <text
-              x={loc.coords.x}
-              y={loc.coords.y - 38}
-              fill="white"
-              fontSize="12"
-              fontWeight="700"
-              textAnchor="middle"
-              className="pointer-events-none"
-              fontFamily="system-ui"
-            >
-              {loc.name.length > 15 ? loc.name.substring(0, 13) + '...' : loc.name}
-            </text>
-
-            {/* Occupancy indicator */}
-            <circle
-              cx={loc.coords.x + 18}
-              cy={loc.coords.y - 12}
-              r="8"
-              fill={loc.occupancy > 70 ? '#ef4444' : loc.occupancy > 40 ? '#f59e0b' : '#10b981'}
-              stroke="rgba(0,0,0,0.8)"
-              strokeWidth="2"
-            />
-            <text
-              x={loc.coords.x + 18}
-              y={loc.coords.y - 8}
-              fill="white"
-              fontSize="8"
-              fontWeight="bold"
-              textAnchor="middle"
-              className="pointer-events-none"
-            >
-              {loc.occupancy}
-            </text>
-          </g>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-white/5 rounded-xl p-3">
+                  <div className="text-gray-400 text-xs mb-1">Capacity</div>
+                  <div className="text-white font-bold">{loc.capacity}</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3">
+                  <div className="text-gray-400 text-xs mb-1">Type</div>
+                  <div className="text-white font-bold capitalize">{loc.type}</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         );
       })}
-    </svg>
+    </div>
 
-    {/* Map Legend */}
-    <div className="absolute top-6 left-6 bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 p-4">
-      <h3 className="text-xs font-bold text-white/60 mb-3 uppercase tracking-wider">Campus Zones</h3>
-      <div className="space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-vibe-purple" />
-          <span className="text-white/80">Academic</span>
+    {/* Compact Legend */}
+    <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 px-4 py-3">
+      <div className="flex items-center gap-4 text-xs">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-vibe-purple" />
+          <span className="text-white/70">Academic</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-vibe-cyan" />
-          <span className="text-white/80">Library</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-vibe-cyan" />
+          <span className="text-white/70">Library</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-400" />
-          <span className="text-white/80">Dining</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-amber-400" />
+          <span className="text-white/70">Dining</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-vibe-rose" />
-          <span className="text-white/80">Sports</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-vibe-rose" />
+          <span className="text-white/70">Sports</span>
         </div>
       </div>
     </div>
 
-    {/* Map Controls */}
-    <div className="absolute bottom-6 right-6 flex flex-col gap-2">
-      <button className="p-3 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition group">
-        <Navigation className="w-5 h-5 group-hover:text-vibe-cyan transition" />
-      </button>
-      <button className="p-3 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition text-xl font-bold">
-        +
-      </button>
-      <button className="p-3 bg-black/60 backdrop-blur-xl rounded-xl border border-white/10 hover:bg-white/10 transition text-xl font-bold">
-        −
-      </button>
+    {/* Compass */}
+    <div className="absolute top-4 right-4 w-12 h-12 bg-black/70 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center">
+      <Navigation className="w-5 h-5 text-vibe-cyan" />
     </div>
   </div>
 );
