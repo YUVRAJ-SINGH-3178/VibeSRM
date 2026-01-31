@@ -1,7 +1,7 @@
 # 🧠 VibeSRM: The Prompt Engineering Blueprint
-### *Team Bug Sneaker | Official VibeCraft Hackathon Submission*
+### *Orchestrated by Team Bug Sneaker | VibeCraft Hackathon*
 
-This document outlines the strategic AI-agentic orchestration used to build **VibeSRM**. We utilized an iterative "Agent-in-the-Loop" workflow, pushing the boundaries of generative UI and real-time state synchronization.
+This document outlines the strategic AI-agentic orchestration used by **Team Bug Sneaker** to build **VibeSRM**. We utilized an iterative "Agent-in-the-Loop" workflow, merging Frontend, Backend, UI/UX, and Database expertise into a single cohesive nexus.
 
 ---
 

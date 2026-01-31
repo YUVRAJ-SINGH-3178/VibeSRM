@@ -146,9 +146,22 @@ VibeSRM is built to be resilient and secure.
 
 ---
 
+## 👥 Meet the Team: Bug Sneaker
+
+Our team combined expertise in design, engineering, and data to craft the ultimate campus experience.
+
+| Member | Role | GitHub |
+| :--- | :--- | :--- |
+| **Yuvraj Singh** | **Team Leader** & Full-Stack Developer | [@YUVRAJ-SINGH-3178](https://github.com/YUVRAJ-SINGH-3178) |
+| **Aayush Bansal** | UI/UX Designer | [@Aayush-Bansal07](https://github.com/Aayush-Bansal07) |
+| **Akshat** | API Integration Specialist | [@Akshatgitty](https://github.com/Akshatgitty) |
+| **Adarsh** | Database Architect | [@Adarsh-Pandey28](https://github.com/Adarsh-Pandey28) |
+
+---
+
 <div align="center">
-  <p>Hand-crafted with 💜 by <b>Yuvraj Singh</b></p>
-  <p><b>Team Bug Sneaker | Crafted for the Vibe. ⚡</b></p>
+  <p>Hand-crafted with 💜 by <b>Team Bug Sneaker</b></p>
+  <p><i>Elevating the student experience, one vibe at a time.</i></p>
   <br />
   <img src="src/Logo.png" width="100" opacity="0.5" />
 </div>
