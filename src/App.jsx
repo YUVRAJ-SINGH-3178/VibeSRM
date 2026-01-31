@@ -1379,7 +1379,7 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
   );
 };
 
-const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification, addNotificationItem }) => {
+const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification, addNotificationItem, onLeaveChannel }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -1387,6 +1387,10 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
 
   const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
   const activeChannelLabel = channelList.find((ch) => ch.id === activeChannel)?.label || activeChannel;
+  
+  // Check if this is a custom channel (dm or event) that can be left
+  const isCustomChannel = activeChannel?.startsWith('dm-') || activeChannel?.startsWith('event-');
+  const isDefaultChannel = DEFAULT_CHAT_CHANNELS.some(ch => ch.id === activeChannel);
 
   // Audio refs
   const sendSound = useRef(new Audio('/sounds/message_sent.mp3'));
@@ -1414,20 +1418,20 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
         const data = await chat.getMessages(activeChannel);
         setMessages(data || []);
 
-        subscription = chat.subscribeToMessages(activeChannel, (newMessage) => {
+        subscription = chat.subscribeToMessages(activeChannel, (message) => {
           setMessages((prev) => {
             // Deduplicate
-            if (prev.some(m => m.id === newMessage.id)) return prev;
+            if (prev.some(m => m.id === message.id)) return prev;
 
             // Play receive sound if not from me
-            if (newMessage.sender_id !== currentUser.id) {
+            if (message.sender_id !== currentUser.id) {
               receiveSound.current.currentTime = 0;
               receiveSound.current.play().catch(() => { });
-              const sender = newMessage.sender?.username || newMessage.sender?.full_name || 'Someone';
+              const sender = message.sender?.username || message.sender?.full_name || 'Someone';
               const category = activeChannel === 'global' ? 'global-chat' : 'chat';
-              addNotificationItem?.(`Chat • ${activeChannelLabel}: ${sender} — ${newMessage.text}`, 'info', category);
+              addNotificationItem?.(`Chat • ${activeChannelLabel}: ${sender} — ${message.text}`, 'info', category);
             }
-            return [...prev, newMessage];
+            return [...prev, message];
           });
         });
       } catch (err) {
@@ -1508,27 +1512,46 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
           <p className="text-[11px] text-gray-500 mt-0.5">Pick your vibe</p>
         </div>
         <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-0.5">
-          {channelList.map((channel) => (
-            <div
-              key={channel.id}
-              onClick={() => setActiveChannel(channel.id)}
-              className={cn(
-                "px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 group",
-                activeChannel === channel.id
-                  ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/10 text-white"
-                  : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]"
-              )}
-            >
-              <span className={cn(
-                "w-1.5 h-1.5 rounded-full transition-all",
-                activeChannel === channel.id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
-              )} />
-              <span className="text-[13px] font-medium">{channel.label}</span>
-              {activeChannel === channel.id && (
-                <span className="ml-auto text-[9px] bg-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-md font-medium">active</span>
-              )}
-            </div>
-          ))}
+          {channelList.map((channel) => {
+            const isCustom = channel.id?.startsWith('dm-') || channel.id?.startsWith('event-');
+            return (
+              <div
+                key={channel.id}
+                className={cn(
+                  "px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-2.5 group relative",
+                  activeChannel === channel.id
+                    ? "bg-gradient-to-r from-violet-600/20 to-fuchsia-600/10 text-white"
+                    : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]"
+                )}
+              >
+                <span className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all",
+                  activeChannel === channel.id ? "bg-violet-500" : "bg-gray-700 group-hover:bg-gray-600"
+                )} />
+                <span 
+                  className="text-[13px] font-medium flex-1"
+                  onClick={() => setActiveChannel(channel.id)}
+                >
+                  {channel.label}
+                </span>
+                {activeChannel === channel.id && (
+                  <span className="text-[9px] bg-violet-500/30 text-violet-300 px-1.5 py-0.5 rounded-md font-medium">active</span>
+                )}
+                {isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLeaveChannel?.(channel.id);
+                    }}
+                    className="p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-vibe-rose hover:bg-vibe-rose/10"
+                    title="Leave this chat"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
         <div className="p-4 border-t border-white/[0.04] bg-black/20">
           <div className="flex items-center gap-3">
@@ -1574,7 +1597,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
         <div className="relative z-10 px-6 py-4 flex items-center justify-between border-b border-white/[0.06] bg-black/20 backdrop-blur-sm">
           <div className="flex items-center gap-4">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-900/30 -rotate-3">
-              <span className="text-white font-bold text-lg rotate-3">#</span>
+              <span className="text-white font-bold text-lg rotate-3">{isCustomChannel ? '💬' : '#'}</span>
             </div>
             <div>
               <h3 className="font-semibold text-lg text-white tracking-tight">{activeChannelLabel}</h3>
@@ -1590,6 +1613,15 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
             <button className="p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/10 transition text-gray-400 hover:text-white">
               <Users className="w-4 h-4" />
             </button>
+            {isCustomChannel && (
+              <button
+                onClick={() => onLeaveChannel?.(activeChannel)}
+                className="p-2.5 rounded-xl bg-vibe-rose/10 hover:bg-vibe-rose/20 transition text-vibe-rose hover:text-vibe-rose/80"
+                title="Leave this chat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -2258,6 +2290,20 @@ export default function App() {
     setActiveTab('chat');
   };
 
+  const handleLeaveChannel = (channelId) => {
+    // Remove the channel from dmChannels
+    setDmChannels((prev) => prev.filter((ch) => ch.id !== channelId));
+    
+    // Switch to global channel if the user was in the channel they're leaving
+    if (activeChannel === channelId) {
+      setActiveChannel('global');
+    }
+    
+    // Show notification
+    const channelLabel = dmChannels.find((ch) => ch.id === channelId)?.label || channelId;
+    addNotification(`Left "${channelLabel}" 👋`);
+  };
+
   const handleSaveProfile = async (payload) => {
     const updated = await user.updateSettings(payload);
     setCurrentUser((prev) => ({
@@ -2300,7 +2346,7 @@ export default function App() {
       case 'social':
         return <SocialView events={eventsData} onChatWith={handleChatWith} onJoinEvent={handleJoinEvent} onOpenEventChat={openEventChat} currentUser={currentUser} />;
       case 'chat':
-        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} addNotificationItem={addNotificationItem} />;
+        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} addNotificationItem={addNotificationItem} onLeaveChannel={handleLeaveChannel} />;
       case 'achievements':
         return <AchievementsView userStats={userStats} />;
       default:
