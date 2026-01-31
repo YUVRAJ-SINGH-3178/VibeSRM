@@ -1,7 +1,7 @@
 // VibeSRM API Service
 // Connects frontend to backend
 
-import { supabase } from './supabase';
+import { supabase } from '../supabase';
 
 // ============ AUTH ============
 export const auth = {
@@ -37,8 +37,6 @@ export const auth = {
     },
 
     login: async (email, password) => {
-        // Try email first, if fails we'd need a way to look up email by username
-        // For simplicity with Supabase Auth, we'll assume email for now
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -73,7 +71,6 @@ export const user = {
             .eq('id', user.id)
             .single();
 
-        // Get extra profile data from user_metadata
         const metadata = user.user_metadata || {};
 
         const flatProfile = profile ? {
@@ -92,12 +89,15 @@ export const user = {
 
     getStats: async () => {
         const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
 
         const { data: profile } = await supabase
             .from('users')
             .select('total_hours, total_coins, current_streak, longest_streak')
             .eq('id', user.id)
             .single();
+
+        if (!profile) return null;
 
         return {
             overview: {
@@ -122,10 +122,8 @@ export const user = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
-        // Separate auth metadata fields from database fields
         const { year_of_study, interests, free_time, ...dbFields } = settings;
 
-        // Store extra profile data in Supabase Auth user_metadata (no schema change needed)
         const { data: authData, error: authError } = await supabase.auth.updateUser({
             data: {
                 year_of_study: year_of_study || null,
@@ -134,33 +132,20 @@ export const user = {
             }
         });
 
-        if (authError) {
-            console.error('Auth metadata update error:', authError);
-            throw authError;
-        }
+        if (authError) throw authError;
 
-        // Only update database fields that exist in the users table
         const dbPayload = {};
         if (dbFields.full_name !== undefined) dbPayload.full_name = dbFields.full_name;
         if (dbFields.username !== undefined) dbPayload.username = dbFields.username;
         if (dbFields.avatar_url !== undefined) dbPayload.avatar_url = dbFields.avatar_url;
 
-        // Only update DB if we have fields to update
         if (Object.keys(dbPayload).length > 0) {
-            const { data: updateData, error: updateError } = await supabase
+            await supabase
                 .from('users')
                 .update(dbPayload)
-                .eq('id', user.id)
-                .select()
-                .single();
-
-            if (updateError) {
-                console.error('Profile DB update error:', updateError);
-                // Don't throw - auth update succeeded
-            }
+                .eq('id', user.id);
         }
 
-        // Return combined data
         const metadata = authData.user?.user_metadata || {};
         return {
             ...dbFields,
@@ -189,14 +174,6 @@ export const locations = {
             .single();
         if (error) throw error;
         return data;
-    },
-
-    getNoiseHeatmap: async () => {
-        const { data, error } = await supabase
-            .from('locations')
-            .select('id, name, latitude, longitude, type'); // Simplified
-        if (error) throw error;
-        return { heatmap: data };
     }
 };
 
@@ -270,61 +247,6 @@ export const social = {
             .eq('status', 'accepted');
         if (error) throw error;
         return data;
-    },
-
-    sendFriendRequest: async (userId) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('friendships')
-            .insert({ user_id: user.id, friend_id: userId, status: 'pending' });
-        if (error) throw error;
-        return data;
-    },
-
-    getPendingRequests: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('friendships')
-            .select('*, user:user_id(id, username, full_name, avatar_url)')
-            .eq('friend_id', user.id)
-            .eq('status', 'pending');
-        if (error) throw error;
-        return data;
-    },
-
-    sendInvite: async (toUserId, locationId, scheduledTime, message) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('study_invites')
-            .insert({
-                from_user_id: user.id,
-                to_user_id: toUserId,
-                location_id: locationId,
-                scheduled_time: scheduledTime
-            });
-        if (error) throw error;
-        return data;
-    }
-};
-
-// ============ GHOST MODE ============
-export const ghost = {
-    getNearby: async (locationId) => {
-        // Find active checkins at this location
-        let query = supabase.from('checkins').select('*, users(username, avatar_url)').eq('is_active', true);
-        if (locationId) query = query.eq('location_id', locationId);
-        const { data, error } = await query;
-        if (error) throw error;
-        return data;
-    },
-
-    sendEncouragement: async (checkinId, emoji) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('ghost_encouragements')
-            .insert({ from_user_id: user.id, to_checkin_id: checkinId, emoji });
-        if (error) throw error;
-        return data;
     }
 };
 
@@ -362,7 +284,6 @@ export const events = {
 
     join: async (id) => {
         const { data: { user } } = await supabase.auth.getUser();
-        // Get current attendees
         const { data: event, error: fetchError } = await supabase
             .from('events')
             .select('attendees')
@@ -370,13 +291,11 @@ export const events = {
             .single();
         if (fetchError) throw fetchError;
 
-        // Check if already joined
         const currentAttendees = event.attendees || [];
         if (currentAttendees.includes(user.id)) {
             return { alreadyJoined: true };
         }
 
-        // Add user to attendees
         const newAttendees = [...currentAttendees, user.id];
         const { data, error } = await supabase
             .from('events')
@@ -417,6 +336,7 @@ export const events = {
         return { deleted: true };
     }
 };
+
 // ============ CHAT ============
 export const chat = {
     getMessages: async (channelId = 'global', limit = 50) => {
@@ -450,7 +370,6 @@ export const chat = {
                 table: 'messages',
                 filter: `channel_id=eq.${channelId}`
             }, async (payload) => {
-                // Fetch sender info separately because realtime doesn't join
                 const { data: sender } = await supabase
                     .from('users')
                     .select('id, username, full_name, avatar_url')
@@ -459,6 +378,26 @@ export const chat = {
                 callback({ ...payload.new, sender });
             })
             .subscribe();
+    },
+
+    deleteMessage: async (messageId) => {
+        if (!messageId) throw new Error('Invalid message id');
+        if (String(messageId).startsWith('temp-')) {
+            throw new Error('Optimistic message — not persisted on server');
+        }
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        const { data, error } = await supabase
+            .from('messages')
+            .delete()
+            .match({ id: messageId, sender_id: user.id })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };
 
@@ -470,43 +409,7 @@ export default {
     locations,
     checkins,
     social,
-    ghost,
     events,
     chat,
-    health,
-    setToken: () => { },
-    getToken: () => { }
-};
-
-// Delete a message (only allowed for message author)
-chat.deleteMessage = async (messageId) => {
-    if (!messageId) throw new Error('Invalid message id');
-
-    // Avoid attempting server delete for optimistic client-only messages
-    if (String(messageId).startsWith('temp-')) {
-        throw new Error('Optimistic message — not persisted on server');
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    try {
-        // Use match to specify both id and sender_id together
-        const { data, error } = await supabase
-            .from('messages')
-            .delete()
-            .match({ id: messageId, sender_id: user.id })
-            .select()
-            .single();
-
-        if (error) {
-            // Surface Supabase/Postgres error for clearer debugging
-            throw error;
-        }
-        return data;
-    } catch (err) {
-        // Re-throw with a more descriptive message while keeping original details
-        const detail = err?.message || err?.details || JSON.stringify(err);
-        throw new Error(`Delete failed: ${detail}`);
-    }
+    health
 };
