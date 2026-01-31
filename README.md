@@ -14,6 +14,13 @@
 
 ---
 
+## 📝 Problem Statement
+University campuses lack a unified, real-time social and resource-management hub. Students often struggle to find available study zones, track real-time occupancy of campus facilities (like gyms or libraries), and connect with peers in a meaningful, "live" way. Existing apps are often purely utilitarian and fail to capture the energy and "vibe" of university life.
+
+**VibeSRM** solves this by providing a high-fidelity, interactive "Digital Twin" of the campus, combining real-time data sync with an immersive social layer.
+
+---
+
 ## 🌌 The "Organic Premium" Aesthetic
 VibeSRM isn't just an app; it's an **atmosphere**. We've ditched generic AI layouts for a hand-crafted, immersive experience that feels "alive."
 
@@ -51,40 +58,82 @@ VibeSRM isn't just an app; it's an **atmosphere**. We've ditched generic AI layo
 
 ---
 
-## 🛠️ The Performance Engine
-
-| Part | Tech | Purpose |
-| :--- | :--- | :--- |
-| **Foundation** | `React 19` | Lightning-fast component rendering & UI reactivity. |
-| **Realtime** | `Supabase` | Instant sync for chat, vibes, and occupancy updates. |
-| **Styling** | `Tailwind CSS` | Custom Design System with glassmorphism utility classes. |
-| **Orchestration** | `Framer Motion` | Fluid transitions and layout-ready animations. |
-| **Intelligence** | `Lucide` | Streamlined iconography for intuitive navigation. |
+## 🏗️ Architecture Diagram
+```mermaid
+graph TD
+    User((User)) -->|React Router| App[App.jsx - Main Nexus]
+    
+    subgraph Frontend_Layer
+        App -->|Framer Motion| UI[Premium Design System]
+        UI --> Components[Chat/Map/Dashboard/Social]
+    end
+    
+    subgraph State_Management
+        App -->|Subscribed| RT[Supabase Realtime]
+        RT -->|Sync| Msg[Message State]
+        RT -->|Sync| Occ[Occupancy State]
+    end
+    
+    subgraph Backend_Cloud
+        RT --> DB[(PostgreSQL)]
+        DB --> Auth[Supabase Auth]
+    </div>
+```
 
 ---
 
-## ⚡ Quick Start
+## 🛠️ The Performance Engine (Tech Stack)
+
+| Part | Tech | Purpose |
+| :--- | :--- | :--- |
+| **Foundation** | `React 19` | UI reactivity and concurrent rendering. |
+| **Realtime** | `Supabase` | Magic-link auth & instant data synchronization. |
+| **Styling** | `Tailwind CSS` | Utility-first custom design tokens. |
+| **Motion** | `Framer Motion` | High-fidelity orchestrated animations. |
+| **Icons** | `Lucide React` | Consistent, accessible iconography. |
+
+---
+
+## 🤖 AI Tools & Prompting Strategy
+VibeSRM was built using **Antigravity (Advanced Agentic AI Assistant)** for pair programming and iterative UI design.
+
+**Prompting Strategy Summary:**
+1.  **Aesthetic Priming**: Using descriptive keyword chains like *"high-end glassmorphism"*, *"midnight holographic gradients"*, and *"organic non-AI look"* to set the design tokens.
+2.  **Iterative Refinement**: Building core logic (Supabase integration) first, then layering complex UI overhauls in dedicated steps (e.g., transforming the basic Chat into the "Holographic Nexus").
+3.  **Cross-Context Logic**: Ensuring the AI maintained global state across multiple views (Map, Chat, Social) through incremental file views and structural outlines.
+
+---
+
+## ⚡ Build Reproducibility (Mandatory)
+
+Follow these exact steps to run VibeSRM locally for judging:
 
 ### 1. Requirements
-Ensure you have **Node.js 18+** and a **Supabase** instance ready.
+Ensure you have **Node.js 18+** (v20+ recommended) and **npm** installed.
 
-### 2. Setup
+### 2. Setup & Installation
 ```bash
-# Clone the vibe
+# 1. Clone the nexus
 git clone https://github.com/YUVRAJ-SINGH-3178/VibeSRM.git
-
-# Enter the nexus
 cd VibeSRM
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Initialize your config (.env)
+# 3. Environment Config
+# Create a .env file in the root and add:
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 
-# Go Live
+# 4. Launch Development Server
 npm run dev
+```
+
+### 3. Production Build
+To verify the final bundle and performance:
+```bash
+npm run build
+npm run preview
 ```
 
 ---
