@@ -1381,6 +1381,7 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
 
 const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification, addNotificationItem }) => {
   const [messages, setMessages] = useState([]);
+  const [toggledMsgId, setToggledMsgId] = useState(null);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
@@ -1608,7 +1609,7 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
               <p className="text-gray-300 font-medium">No messages yet</p>
               <p className="text-gray-600 text-sm mt-1">Be the first to say something!</p>
             </div>
-          ) : (
+              ) : (
             messages.map((msg, idx) => {
               const isMe = msg.sender_id === currentUser.id;
               const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
@@ -1631,17 +1632,65 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                       />
                     )}
                   </div>
-                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}>
+                  <div className={cn("max-w-[70%] flex flex-col gap-0.5", isMe ? "items-end" : "items-start")}> 
                     {showAvatar && !isMe && (
                       <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
                     )}
                     <div className={cn(
-                      "px-4 py-2.5 text-[14px] leading-relaxed relative",
+                      "px-4 py-2.5 text-[14px] leading-relaxed relative cursor-pointer",
                       isMe
                         ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
                         : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
-                    )}>
+                    )}
+                      onClick={(e) => { e.stopPropagation(); setToggledMsgId(prev => prev === msg.id ? null : msg.id); }}
+                      onDoubleClick={(e) => { e.stopPropagation(); /* reserved for future */ }}
+                    >
                       {msg.text}
+
+                      {/* Toggle actions: Copy always, Delete only for own messages */}
+                      {toggledMsgId === msg.id && (
+                        <div className="absolute -top-8 right-0 flex items-center gap-2">
+                          <button
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              try {
+                                navigator.clipboard.writeText(msg.text);
+                                addNotification?.('Message copied', 'success');
+                              } catch (err) {
+                                console.error('Copy failed', err);
+                                addNotification?.('Copy failed', 'error');
+                              }
+                              setToggledMsgId(null);
+                            }}
+                            className="bg-white/5 hover:bg-white/10 text-gray-200 px-2 py-1 rounded-md text-xs"
+                          >Copy</button>
+                          {isMe && (
+                            <button
+                              onClick={async (ev) => {
+                                ev.stopPropagation();
+                                // If optimistic (temp) id, remove locally
+                                if (String(msg.id).startsWith('temp-')) {
+                                  setMessages(prev => prev.filter(m => m.id !== msg.id));
+                                  addNotification?.('Message removed', 'info');
+                                  setToggledMsgId(null);
+                                  return;
+                                }
+
+                                try {
+                                  await chat.deleteMessage(msg.id);
+                                  setMessages(prev => prev.filter(m => m.id !== msg.id));
+                                  addNotification?.('Message deleted', 'success');
+                                } catch (err) {
+                                  console.error('Delete failed', err);
+                                  addNotification?.('Delete failed', 'error');
+                                }
+                                setToggledMsgId(null);
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md text-xs"
+                            >Delete</button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {showTime && (
                       <span className={cn("text-[10px] text-gray-600 px-1", isMe ? "text-right" : "text-left")}>
