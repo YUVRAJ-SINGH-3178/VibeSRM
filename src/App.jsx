@@ -423,6 +423,9 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 150 250 L 250 200 L 350 250 L 350 400 L 250 450 L 150 400 Z" fill="url(#purpleBuild)" stroke="#a855f7" strokeWidth="3" opacity="0.9" />
             <path d="M 250 200 L 350 250 L 350 400 L 250 350 Z" fill="rgba(124,58,237,0.4)" />
             <path d="M 150 250 L 250 200 L 250 350 L 150 400 Z" fill="rgba(124,58,237,0.6)" />
+            {/* Floating Label - Top */}
+            <rect x="190" y="175" width="120" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#a855f7" strokeWidth="1" />
+            <text x="250" y="192" fill="#e9d5ff" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">ACADEMIC</text>
           </g>
 
           {/* Library - Main Building (Larger, Central) */}
@@ -430,6 +433,9 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 500 350 L 650 280 L 800 350 L 800 550 L 650 620 L 500 550 Z" fill="url(#cyanBuild)" stroke="#22d3ee" strokeWidth="4" opacity="0.95" />
             <path d="M 650 280 L 800 350 L 800 550 L 650 480 Z" fill="rgba(6,182,212,0.5)" />
             <path d="M 500 350 L 650 280 L 650 480 L 500 550 Z" fill="rgba(6,182,212,0.7)" />
+            {/* Floating Label - Top */}
+            <rect x="595" y="250" width="110" height="28" rx="14" fill="rgba(0,0,0,0.7)" stroke="#22d3ee" strokeWidth="1" />
+            <text x="650" y="269" fill="#cffafe" fontSize="14" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">LIBRARY</text>
           </g>
 
           {/* Cafeteria */}
@@ -437,12 +443,18 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 850 200 L 950 160 L 1050 200 L 1050 320 L 950 360 L 850 320 Z" fill="url(#amberBuild)" stroke="#fbbf24" strokeWidth="3" opacity="0.9" />
             <path d="M 950 160 L 1050 200 L 1050 320 L 950 280 Z" fill="rgba(251,191,36,0.4)" />
             <path d="M 850 200 L 950 160 L 950 280 L 850 320 Z" fill="rgba(251,191,36,0.6)" />
+            {/* Floating Label - Top */}
+            <rect x="885" y="130" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#fbbf24" strokeWidth="1" />
+            <text x="950" y="147" fill="#fef3c7" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">CAFETERIA</text>
           </g>
 
           {/* Sports Complex */}
           <g filter="url(#softGlow)">
             <ellipse cx="900" cy="650" rx="120" ry="80" fill="url(#roseBuild)" stroke="#fb7185" strokeWidth="3" opacity="0.9" />
             <ellipse cx="900" cy="640" rx="80" ry="50" fill="rgba(251,113,133,0.2)" stroke="#fb7185" strokeWidth="2" />
+            {/* Floating Label - Top */}
+            <rect x="850" y="555" width="100" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#fb7185" strokeWidth="1" />
+            <text x="900" y="572" fill="#fecdd3" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">SPORTS</text>
           </g>
 
           {/* Tech Park */}
@@ -450,12 +462,18 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 150 600 L 250 560 L 350 600 L 350 720 L 250 760 L 150 720 Z" fill="rgba(168,85,247,0.3)" stroke="#a78bfa" strokeWidth="3" opacity="0.85" />
             <path d="M 250 560 L 350 600 L 350 720 L 250 680 Z" fill="rgba(139,92,246,0.25)" />
             <path d="M 150 600 L 250 560 L 250 680 L 150 720 Z" fill="rgba(139,92,246,0.4)" />
+            {/* Floating Label - Top */}
+            <rect x="185" y="530" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#a78bfa" strokeWidth="1" />
+            <text x="250" y="547" fill="#ddd6fe" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">TECH PARK</text>
           </g>
 
           {/* Innovation Hub */}
           <g filter="url(#softGlow)">
             <rect x="850" y="450" width="180" height="140" rx="12" fill="rgba(16,185,129,0.25)" stroke="#10b981" strokeWidth="2" opacity="0.85" />
             <rect x="860" y="460" width="160" height="10" rx="5" fill="rgba(16,185,129,0.4)" />
+            {/* Floating Label - Top */}
+            <rect x="875" y="420" width="130" height="24" rx="12" fill="rgba(0,0,0,0.7)" stroke="#10b981" strokeWidth="1" />
+            <text x="940" y="437" fill="#d1fae5" fontSize="12" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">INNOVATION</text>
           </g>
 
           {/* Major Events - Special Markers */}
