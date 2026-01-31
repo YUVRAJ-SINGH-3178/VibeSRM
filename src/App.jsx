@@ -17,20 +17,42 @@ import {
   Send,
   MoreVertical,
   Phone,
-  Video
+  Video,
+  LogIn,
+  LogOut,
+  User as UserIcon,
+  Ghost,
+  BarChart3,
+  Settings
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import api, { auth, locations as locationsApi, checkins, user, social, ghost } from './api.js';
 
 // --- Utilities ---
 function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// --- Data ---
+// Map backend data to frontend format
+const mapLocation = (loc) => ({
+  id: loc.id,
+  name: loc.name,
+  type: loc.type,
+  occupancy: loc.occupancyPercent || Math.round((loc.currentOccupancy / loc.capacity) * 100),
+  capacity: loc.capacity,
+  desc: loc.description || `${loc.activeUsers || 0} people studying`,
+  coords: { x: 100 + Math.random() * 700, y: 100 + Math.random() * 500 },
+  color: loc.occupancyPercent > 70 ? 'text-vibe-rose' : loc.occupancyPercent > 30 ? 'text-amber-400' : 'text-vibe-cyan',
+  amenities: loc.amenities,
+  avgNoise: loc.avgNoise,
+  photoUrl: loc.photoUrl
+});
+
+// Fallback data (for offline/demo mode)
 const INITIAL_LOCATIONS = [
   { id: '1', name: 'Tech Park Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 250, y: 180 }, color: 'text-vibe-cyan' },
-  { id: '2', name: 'Java Lounge', type: 'dining', occupancy: 42, capacity: 150, desc: 'Fresh Brews • Fast WiFi', coords: { x: 550, y: 400 }, color: 'text-amber-400' },
+  { id: '2', name: 'Java Lounge', type: 'cafe', occupancy: 42, capacity: 150, desc: 'Fresh Brews • Fast WiFi', coords: { x: 550, y: 400 }, color: 'text-amber-400' },
   { id: '3', name: 'Spartan Gym', type: 'gym', occupancy: 15, capacity: 200, desc: 'Empty • Cardio Deck', coords: { x: 180, y: 550 }, color: 'text-vibe-rose' },
   { id: '4', name: 'Innovation Hub', type: 'study', occupancy: 92, capacity: 80, desc: 'Hackathon in progress', coords: { x: 750, y: 300 }, color: 'text-vibe-purple' },
 ];
@@ -47,6 +69,122 @@ const CHATS = [
 const CARD_STYLE = "relative overflow-hidden bg-[#0A0A0F] bg-opacity-80 backdrop-blur-2xl border border-white/5 rounded-[2rem] transition-all duration-500 hover:border-white/10 hover:shadow-[0_0_50px_-12px_rgba(124,58,237,0.25)] hover:-translate-y-1 group";
 const NAV_ITEM_STYLE = "relative p-4 rounded-2xl text-gray-400 transition-all duration-300 hover:text-white hover:bg-white/5";
 const NAV_ITEM_ACTIVE = "text-white bg-white/10 shadow-[0_0_20px_-5px_rgba(255,255,255,0.3)]";
+
+// --- Auth Modal Component ---
+const AuthModal = ({ isOpen, onClose, onAuth }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      let data;
+      if (isLogin) {
+        data = await auth.login(email, password);
+      } else {
+        data = await auth.register(email, password, username, fullName);
+      }
+      onAuth(data.user);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="w-full max-w-md bg-[#0A0A0F] border border-white/10 rounded-3xl p-8"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-display font-bold">{isLogin ? 'Welcome Back' : 'Join VibeSRM'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full"><X className="w-5 h-5" /></button>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-vibe-rose/20 border border-vibe-rose/50 rounded-xl text-sm text-vibe-rose">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="text-sm text-gray-400 block mb-2">Username</label>
+                <input
+                  value={username} onChange={(e) => setUsername(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
+                  placeholder="coolstudent123"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400 block mb-2">Full Name</label>
+                <input
+                  value={fullName} onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
+                  placeholder="Your Name"
+                />
+              </div>
+            </>
+          )}
+          <div>
+            <label className="text-sm text-gray-400 block mb-2">Email</label>
+            <input
+              type="email"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
+              placeholder="you@srm.edu.in"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-400 block mb-2">Password</label>
+            <input
+              type="password"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition"
+              placeholder="••••••••"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-vibe-purple rounded-xl font-bold mt-4 hover:bg-vibe-purple/80 transition disabled:opacity-50"
+          >
+            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+
+        <p className="text-center text-gray-400 mt-4 text-sm">
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-vibe-purple hover:underline">
+            {isLogin ? 'Sign Up' : 'Sign In'}
+          </button>
+        </p>
+      </motion.div>
+    </div>
+  );
+};
 
 // --- Components ---
 
@@ -456,6 +594,71 @@ export default function App() {
   const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  // New state for backend connection
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeCheckin, setActiveCheckin] = useState(null);
+  const [backendConnected, setBackendConnected] = useState(false);
+  const [userStats, setUserStats] = useState(null);
+
+  // Check for existing token and load user
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = api.getToken();
+      if (token) {
+        try {
+          const data = await user.getProfile();
+          setCurrentUser(data.user);
+          const stats = await user.getStats();
+          setUserStats(stats);
+        } catch (err) {
+          console.log('Session expired');
+          api.setToken(null);
+        }
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Load locations from backend
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const data = await locationsApi.getAll();
+        if (data.locations && data.locations.length > 0) {
+          setLocations(data.locations.map(mapLocation));
+          setBackendConnected(true);
+        }
+      } catch (err) {
+        console.log('Backend not available, using demo data');
+        setBackendConnected(false);
+      }
+    };
+    loadLocations();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(loadLocations, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check for active checkin
+  useEffect(() => {
+    if (currentUser) {
+      const checkActive = async () => {
+        try {
+          const data = await checkins.getActive();
+          if (data.active) {
+            setActiveCheckin(data.checkin);
+          }
+        } catch (err) {
+          console.log('Could not check active session');
+        }
+      };
+      checkActive();
+    }
+  }, [currentUser]);
+
+  // Time update
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })), 60000);
     return () => clearInterval(timer);
@@ -469,6 +672,27 @@ export default function App() {
     }, 3000);
   };
 
+  const handleAuth = async (userData) => {
+    setCurrentUser(userData);
+    addNotification(`Welcome, ${userData.fullName || userData.username}!`);
+
+    // Load user stats
+    try {
+      const stats = await user.getStats();
+      setUserStats(stats);
+    } catch (err) {
+      console.log('Could not load stats');
+    }
+  };
+
+  const handleLogout = () => {
+    auth.logout();
+    setCurrentUser(null);
+    setUserStats(null);
+    setActiveCheckin(null);
+    addNotification('Logged out successfully', 'info');
+  };
+
   const handleCreateVibe = (data) => {
     const newLoc = {
       id: Date.now().toString(),
@@ -477,7 +701,7 @@ export default function App() {
       occupancy: 1,
       capacity: 10,
       desc: data.desc,
-      coords: { x: Math.random() * 800 + 100, y: Math.random() * 600 + 100 }, // Random pos
+      coords: { x: Math.random() * 800 + 100, y: Math.random() * 600 + 100 },
       color: 'text-white'
     };
     setLocations([...locations, newLoc]);
@@ -485,15 +709,49 @@ export default function App() {
     setSelectedLoc(newLoc);
   };
 
-  const handleCheckIn = (loc) => {
-    if (joined.has(loc.id)) {
-      const newJoined = new Set(joined);
-      newJoined.delete(loc.id);
-      setJoined(newJoined);
-      addNotification(`Checked out of ${loc.name}`, 'info');
+  const handleCheckIn = async (loc) => {
+    if (!currentUser) {
+      setShowAuthModal(true);
+      addNotification('Please sign in to check in', 'error');
+      return;
+    }
+
+    if (activeCheckin) {
+      // Check out
+      try {
+        const result = await checkins.checkOut(activeCheckin.id, {});
+        setActiveCheckin(null);
+        const newJoined = new Set(joined);
+        newJoined.delete(loc.id);
+        setJoined(newJoined);
+        addNotification(`Checked out! Earned ${result.coinsEarned} coins 🪙`);
+      } catch (err) {
+        addNotification(err.message, 'error');
+      }
     } else {
-      setJoined(new Set(joined).add(loc.id));
-      addNotification(`Welcome to ${loc.name}!`);
+      // Check in
+      try {
+        // Get user's current position (mock for now)
+        const latitude = loc.latitude || 12.9716;
+        const longitude = loc.longitude || 77.5946;
+
+        const result = await checkins.checkIn(
+          loc.id,
+          latitude,
+          longitude,
+          'Studying',
+          'solo',
+          120
+        );
+
+        setActiveCheckin({ id: result.checkinId, locationName: loc.name });
+        setJoined(new Set(joined).add(loc.id));
+        addNotification(`Checked in to ${loc.name}! +${result.coinsEarned} coins 🪙`);
+      } catch (err) {
+        // Fallback to local check-in for demo
+        setJoined(new Set(joined).add(loc.id));
+        addNotification(`Welcome to ${loc.name}!`);
+      }
     }
   };
 
@@ -538,18 +796,61 @@ export default function App() {
         ))}
       </AnimatePresence>
 
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} onAuth={handleAuth} />
       <CreateVibeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onCreate={handleCreateVibe} />
+
+      {/* Active Session Banner */}
+      {activeCheckin && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-vibe-purple/90 backdrop-blur-xl rounded-2xl border border-white/20 flex items-center gap-4">
+          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+          <span className="font-medium">Studying at {activeCheckin.locationName}</span>
+          <button
+            onClick={() => handleCheckIn({ id: activeCheckin.id })}
+            className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 transition"
+          >
+            End Session
+          </button>
+        </div>
+      )}
 
       <div className="max-w-[1600px] mx-auto space-y-8">
         <header className="flex justify-between items-end px-4">
           <div>
             <h1 className="text-6xl font-display font-bold text-white tracking-tighter mb-2">VibeSRM</h1>
-            <p className="text-gray-400 font-medium">Campusing made smart.</p>
+            <div className="flex items-center gap-3">
+              <p className="text-gray-400 font-medium">Campusing made smart.</p>
+              {backendConnected && (
+                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                  Live
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-6">
+            {/* User Stats */}
+            {currentUser && userStats && (
+              <div className="hidden lg:flex items-center gap-4 px-4 py-2 bg-white/5 rounded-2xl border border-white/10">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-vibe-purple">{userStats.overview?.totalCoins || 0}</div>
+                  <div className="text-[10px] text-gray-400">COINS</div>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-vibe-cyan">{userStats.overview?.currentStreak || 0}</div>
+                  <div className="text-[10px] text-gray-400">STREAK</div>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div className="text-center">
+                  <div className="text-lg font-bold text-amber-400">{(userStats.overview?.totalHours || 0).toFixed(1)}h</div>
+                  <div className="text-[10px] text-gray-400">STUDIED</div>
+                </div>
+              </div>
+            )}
+
             <div className="text-right hidden md:block">
               <div className="text-3xl font-bold font-display">{time}</div>
-              <div className="text-sm text-vibe-purple font-medium">Sunday, 31 Jan</div>
+              <div className="text-sm text-vibe-purple font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}</div>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
@@ -557,6 +858,32 @@ export default function App() {
             >
               <Plus className="w-5 h-5" /> Create Vibe
             </button>
+
+            {/* Auth Button */}
+            {currentUser ? (
+              <div className="relative group">
+                <button className="w-12 h-12 rounded-full border-2 border-vibe-purple overflow-hidden hover:scale-105 transition">
+                  <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} alt="User" className="w-full h-full object-cover" />
+                </button>
+                <div className="absolute right-0 top-14 w-48 bg-[#0A0A0F] border border-white/10 rounded-2xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <div className="px-3 py-2 border-b border-white/10 mb-2">
+                    <p className="font-bold">{currentUser.fullName || currentUser.username}</p>
+                    <p className="text-xs text-gray-400">{currentUser.email}</p>
+                  </div>
+                  <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 text-vibe-rose">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-6 py-3 bg-vibe-purple text-white font-bold rounded-2xl hover:scale-105 transition flex items-center gap-2"
+              >
+                <LogIn className="w-5 h-5" /> Sign In
+              </button>
+            )}
+
             <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-3 right-3 w-2 h-2 bg-vibe-rose rounded-full" />
