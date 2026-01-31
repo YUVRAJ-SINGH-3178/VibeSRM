@@ -13,6 +13,7 @@ import locationRoutes from './routes/locations.js';
 import userRoutes from './routes/users.js';
 import socialRoutes from './routes/social.js';
 import ghostRoutes from './routes/ghost.js';
+import eventRoutes from './routes/events.js';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/ghost', ghostRoutes);
+app.use('/api/events', eventRoutes);
 
 // Health check
 app.get('/health', async (req, res) => {

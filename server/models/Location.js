@@ -9,7 +9,9 @@ const locationSchema = new mongoose.Schema({
     },
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true },
-    capacity: { type: Number, default: 100 },
+    capacity: { type: Number, required: true },
+    mapX: { type: Number },
+    mapY: { type: Number },
     currentOccupancy: { type: Number, default: 0 },
     amenities: {
         wifi: { type: Boolean, default: false },

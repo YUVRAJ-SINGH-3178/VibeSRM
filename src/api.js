@@ -45,11 +45,14 @@ const api = async (endpoint, options = {}) => {
 
 // ============ AUTH ============
 export const auth = {
-    register: (email, password, username, fullName) =>
-        api('/auth/register', {
+    register: async (email, password, username, fullName) => {
+        const data = await api('/auth/register', {
             method: 'POST',
             body: JSON.stringify({ email, password, username, fullName })
-        }),
+        });
+        if (data.token) setToken(data.token);
+        return data;
+    },
 
     login: async (email, password) => {
         const data = await api('/auth/login', {
@@ -163,6 +166,18 @@ export const ghost = {
     getSessionSummary: (checkinId) => api(`/ghost/session/${checkinId}/summary`)
 };
 
+// ============ EVENTS ============
+export const events = {
+    getAll: () => api('/events'),
+    create: (eventData) => api('/events', {
+        method: 'POST',
+        body: JSON.stringify(eventData)
+    }),
+    join: (id) => api(`/events/${id}/join`, {
+        method: 'POST'
+    })
+};
+
 // ============ HEALTH CHECK ============
 export const health = () => fetch(`${API_BASE.replace('/api', '')}/health`).then(r => r.json());
 
@@ -173,6 +188,7 @@ export default {
     checkins,
     social,
     ghost,
+    events,
     health,
     setToken,
     getToken
