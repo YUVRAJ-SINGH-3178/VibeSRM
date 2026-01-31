@@ -73,7 +73,21 @@ export const user = {
             .eq('id', user.id)
             .single();
 
-        return { user: { ...user, ...profile } };
+        // Get extra profile data from user_metadata
+        const metadata = user.user_metadata || {};
+
+        const flatProfile = profile ? {
+            ...profile,
+            year_of_study: metadata.year_of_study,
+            interests: metadata.interests || [],
+            free_time: metadata.free_time
+        } : {
+            year_of_study: metadata.year_of_study,
+            interests: metadata.interests || [],
+            free_time: metadata.free_time
+        };
+
+        return { user: { ...user, ...flatProfile } };
     },
 
     getStats: async () => {
@@ -106,12 +120,54 @@ export const user = {
 
     updateSettings: async (settings) => {
         const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-            .from('users')
-            .update(settings)
-            .eq('id', user.id);
-        if (error) throw error;
-        return data;
+        if (!user) throw new Error('Not authenticated');
+
+        // Separate auth metadata fields from database fields
+        const { year_of_study, interests, free_time, ...dbFields } = settings;
+
+        // Store extra profile data in Supabase Auth user_metadata (no schema change needed)
+        const { data: authData, error: authError } = await supabase.auth.updateUser({
+            data: {
+                year_of_study: year_of_study || null,
+                interests: interests || [],
+                free_time: free_time || null
+            }
+        });
+
+        if (authError) {
+            console.error('Auth metadata update error:', authError);
+            throw authError;
+        }
+
+        // Only update database fields that exist in the users table
+        const dbPayload = {};
+        if (dbFields.full_name !== undefined) dbPayload.full_name = dbFields.full_name;
+        if (dbFields.username !== undefined) dbPayload.username = dbFields.username;
+        if (dbFields.avatar_url !== undefined) dbPayload.avatar_url = dbFields.avatar_url;
+
+        // Only update DB if we have fields to update
+        if (Object.keys(dbPayload).length > 0) {
+            const { data: updateData, error: updateError } = await supabase
+                .from('users')
+                .update(dbPayload)
+                .eq('id', user.id)
+                .select()
+                .single();
+
+            if (updateError) {
+                console.error('Profile DB update error:', updateError);
+                // Don't throw - auth update succeeded
+            }
+        }
+
+        // Return combined data
+        const metadata = authData.user?.user_metadata || {};
+        return {
+            ...dbFields,
+            year_of_study: metadata.year_of_study,
+            interests: metadata.interests || [],
+            free_time: metadata.free_time
+        };
     }
 };
 
