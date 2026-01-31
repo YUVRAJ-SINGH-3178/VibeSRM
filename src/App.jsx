@@ -43,8 +43,20 @@ const mapLocation = (loc) => ({
   capacity: loc.capacity,
   desc: loc.description || `${loc.activeUsers || 0} people studying`,
   coords: {
-    x: loc.mapX || (100 + Math.random() * 800),
-    y: loc.mapY || (100 + Math.random() * 600)
+    x: loc.mapX || (
+      loc.name?.includes('Library') ? 650 :
+        loc.name?.includes('Lounge') ? 950 :
+          loc.name?.includes('Tech') ? 250 :
+            loc.name?.includes('Innovation') ? 940 :
+              loc.name?.includes('Sports') ? 900 : 250
+    ),
+    y: loc.mapY || (
+      loc.name?.includes('Library') ? 465 :
+        loc.name?.includes('Lounge') ? 250 :
+          loc.name?.includes('Tech') ? 670 :
+            loc.name?.includes('Innovation') ? 530 :
+              loc.name?.includes('Sports') ? 650 : 325
+    )
   },
   color: loc.occupancyPercent > 70 ? 'text-vibe-rose' : loc.occupancyPercent > 30 ? 'text-amber-400' : 'text-vibe-cyan',
   amenities: loc.amenities,
@@ -54,10 +66,12 @@ const mapLocation = (loc) => ({
 
 // Fallback data (for offline/demo mode)
 const INITIAL_LOCATIONS = [
-  { id: '1', name: 'Tech Park Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 250, y: 180 }, color: 'text-vibe-cyan' },
-  { id: '2', name: 'Java Lounge', type: 'cafe', occupancy: 42, capacity: 150, desc: 'Fresh Brews • Fast WiFi', coords: { x: 550, y: 400 }, color: 'text-amber-400' },
-  { id: '3', name: 'Spartan Gym', type: 'gym', occupancy: 15, capacity: 200, desc: 'Empty • Cardio Deck', coords: { x: 180, y: 550 }, color: 'text-vibe-rose' },
-  { id: '4', name: 'Innovation Hub', type: 'study', occupancy: 92, capacity: 80, desc: 'Hackathon in progress', coords: { x: 750, y: 300 }, color: 'text-vibe-purple' },
+  { id: '1', name: 'Tech Park Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 650, y: 465 }, color: 'text-vibe-cyan' },
+  { id: '2', name: 'Java Lounge', type: 'cafe', occupancy: 42, capacity: 150, desc: 'Fresh Brews • Fast WiFi', coords: { x: 950, y: 250 }, color: 'text-amber-400' },
+  { id: '3', name: 'Main Tech Park', type: 'gym', occupancy: 15, capacity: 200, desc: 'Innovation Center', coords: { x: 250, y: 670 }, color: 'text-vibe-rose' },
+  { id: '4', name: 'Innovation Hub', type: 'study', occupancy: 92, capacity: 80, desc: 'Hackathon in progress', coords: { x: 940, y: 530 }, color: 'text-vibe-purple' },
+  { id: '5', name: 'Sports Complex', type: 'other', occupancy: 10, capacity: 300, desc: 'Olympic Pool', coords: { x: 900, y: 650 }, color: 'text-vibe-rose' },
+  { id: '6', name: 'Academic Block A', type: 'study', occupancy: 30, capacity: 100, desc: 'CSE Dept', coords: { x: 250, y: 325 }, color: 'text-vibe-purple' },
 ];
 
 const FORECAST = [50, 75, 90, 60, 45, 30, 80];

@@ -16,7 +16,7 @@ const registerSchema = Joi.object({
 });
 
 const loginSchema = Joi.object({
-    email: Joi.string().email().required(),
+    email: Joi.string().required(), // Can be email or username
     password: Joi.string().required()
 });
 
@@ -78,9 +78,12 @@ router.post('/login', async (req, res) => {
         }
 
         const { email, password } = value;
+        const identifier = email.toLowerCase();
 
-        // Find user
-        const user = await User.findOne({ email });
+        // Find user by email or username
+        const user = await User.findOne({
+            $or: [{ email: identifier }, { username: identifier }]
+        });
 
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
