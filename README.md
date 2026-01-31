@@ -14,83 +14,86 @@
 
 ---
 
-## 🎨 The "Organic Premium" Aesthetic
-VibeSRM isn't just an app; it's a vibe. We've moved away from uniform, AI-looking designs to a **Hand-Crafted Organic UI**:
-- 🌌 **Aurora Backgrounds**: Shifting violet/fuchsia gradients that feel alive.
-- 🧪 **Mesh Orbs**: Asymmetric, floating light sources that drift naturally.
-- 💎 **Premium Glass**: 16px backdrop blur with subtle violet borders.
-- 🌀 **Asymmetric Delight**: Playful rotations and varied spacing for a human touch.
+## ✨ Immersive Student Experience
+
+VibeSRM redefines campus life with a **"Glass & Neon"** design philosophy. It's not just a utility; it's an atmospheric companion for your academic journey.
+
+### 🌌 Atmospheric UI
+- **Aurora Backgrounds**: Dynamic, shifting violet/fuchsia gradients that breathe life into the interface.
+- **Glassmorphism**: Premium "frosted glass" panels with 16px backdrop blur and subtle neon borders.
+- **Micro-animations**: Staggered layout entrances and fluid hover interactions powered by Framer Motion.
 
 ---
 
-## 🚀 Visionary Features
+## 🚀 Core Features
 
-### 🍱 Bento Dashboard
-A modern, responsive layout that prioritizes what matters.
-- **Live Occupancy**: Real-time tracking of libraries, gyms, and cafes.
-- **Weekly Streaks**: Gamified study sessions with occupancy forecasts.
-- **Quick Check-ins**: GPS-verified entry to earn campus coins.
+### 🍱 Smart Bento Dashboard
+Your campus at a glance.
+- **Live Occupancy**: Real-time crowd tracking for the library, gym, and cafeteria.
+- **Weekly Streaks**: Gamify your study habits and monitor campus activity forecasts.
+- **Quick Check-ins**: Verify your presence at hotspots to earn rewards.
 
-### 🗾 Interactive Campus Map
-A fully immersive SVG-based map experience.
-- **Visual Hotspots**: Pulsing color indicators (Cyan = Empty, Rose = Full).
-- **Smart Filtering**: Toggle between Study zones, Food, and Sports.
+### 🗾 Interactive Campus Nexus
+A living, breathing map of your university.
+- **Real-time Heatmaps**: Pulsing indicators show where the vibe is (Cyan for quiet, Rose for bustling).
+- **Dynamic Filtering**: Instantly find study groups, food trucks, or sports events.
 
-### 💬 Squad Chat Hub
-Seamless, beautiful communication.
-- **Gradient Themes**: Stunning Purple/Black/White "Midnight" chat interface.
-- **Dynamic Avatars**: Automated avatar generation using [DiceBear](https://dicebear.com/).
-- **Live Status**: Real-time "Studying at..." indicators for your friends.
+### 💬 Holographic Squad Hub
+The most beautiful way to stay connected.
+- **Social Pulse**: See what's vibing on campus today via an interactive community feed.
+- **Holographic Chat**: Message bubbles with glass reflections and neon glows.
+- **Vibe Matching**: Find study partners or event squads based on shared interests.
 
 ---
 
-## 🛠️ Modern Tech Stack
+## 🛠️ The Engine
 
-| Layer | Technology |
+| Component | Technology |
 |---|---|
-| **Frontend** | React 18 + Vite |
-| **Logic** | Supabase (Authentication & Realtime) |
-| **Styling** | Tailwind CSS v3 |
-| **Motion** | Framer Motion (Orchestrated Animations) |
-| **Icons** | Lucide React |
+| **Frontend** | React 19 (Latest) + Vite |
+| **Backend** | Supabase (Auth, Realtime, DB) |
+| **Styling** | Tailwind CSS + Custom Glass Design System |
+| **Motion** | Framer Motion & Lucide Icons |
 
 ---
 
-## ⚡ Setup & Launch
+## ⚡ Get Started
 
-### 1. Requirements
-- Node.js 18+
-- Supabase Account (URL & Anon Key)
+### 1. Prerequisites
+- **Node.js** 18 or higher
+- **Supabase** Project (URL & Service Role Key)
 
-### 2. Quick Start
+### 2. Installation
 ```bash
-# Clone
+# Clone the vibe
 git clone https://github.com/YUVRAJ-SINGH-3178/VibeSRM.git
 cd VibeSRM
 
-# Install
+# Install dependencies
 npm install
 
-# Environment
-# Create a .env file and add your Supabase credentials:
-# VITE_SUPABASE_URL=your_url
-# VITE_SUPABASE_ANON_KEY=your_key
-
-# Run
+# Launch local server
 npm run dev
+```
+
+### 3. Environment Config
+Create a `.env` file in the root:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ---
 
-## 🔌 API & Integration
-VibeSRM leverages **Supabase Realtime** for instant message delivery and live occupancy updates. 
-- ✅ **JWT Authentication**
-- ✅ **Postgres RLS Enabled**
-- ✅ **Edge Runtime Compatible**
+## 🔌 API Integration
+VibeSRM leverages **Supabase Realtime** for instant sync across all users. 
+- ✅ **Secure Auth**: Row Level Security (RLS) enabled.
+- ✅ **Instant Messaging**: Low-latency chat delivery.
+- ✅ **Live Updates**: Post-merger occupancy sync.
 
 ---
 
 <div align="center">
-  <p>Made with 💜 by <b>Yuvraj Singh</b></p>
+  <p>Built with Passion by <b>Yuvraj Singh</b></p>
   <p><i>Elevating the student experience, one vibe at a time.</i></p>
 </div>
