@@ -13,7 +13,7 @@ export const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
     const locationCoords = {
         'Academic Block': { x: 250, y: 320 },
         'Library': { x: 650, y: 450 },
-        'Cafeteria': { x: 950, y: 250 },
+        'Sports Area': { x: 950, y: 250 },
         'Ganga Gym': { x: 900, y: 620 },
         'Flag Park': { x: 250, y: 650 }
     };
@@ -76,11 +76,13 @@ export const CreateVibeModal = ({ isOpen, onClose, onCreate }) => {
                         <select
                             value={selectedLocation}
                             onChange={(e) => setSelectedLocation(e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition text-white"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 outline-none focus:border-vibe-purple transition text-white appearance-none cursor-pointer"
                         >
-                            <option value="">Select a location...</option>
+                            <option value="" className="bg-[#0A0A0F] text-gray-400">Select a location...</option>
                             {Object.keys(locationCoords).map(loc => (
-                                <option key={loc} value={loc}>{loc}</option>
+                                <option key={loc} value={loc} className="bg-[#0A0A0F] text-white">
+                                    {loc}
+                                </option>
                             ))}
                         </select>
                     </div>
