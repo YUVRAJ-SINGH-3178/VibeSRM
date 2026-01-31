@@ -2,7 +2,9 @@
 // Connects frontend to backend
 
 const API_BASE = window.VIBESRM_API_URL || import.meta.env.VITE_API_URL ||
-    (window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : `http://${window.location.hostname}:5000/api`);
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:5000/api'
+        : `http://${window.location.hostname}:5000/api`);
 
 // Token management
 let authToken = localStorage.getItem('vibesrm_token');
