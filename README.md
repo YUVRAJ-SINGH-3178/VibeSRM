@@ -1,128 +1,96 @@
-# ⚡ VibeSRM
+<div align="center">
+  <img src="https://api.dicebear.com/7.x/notionists/svg?seed=VibeSRM" width="100" height="100" alt="VibeSRM Logo" />
+  <h1>⚡ VibeSRM</h1>
+  <p><b>Campusing Made Smart.</b></p>
+  <p><i>A premium, interactive Smart Campus Assistant designed to elevate your university experience with real-time insights, social connections, and a stunning organic glassmorphism aesthetic.</i></p>
 
-**Campusing Made Smart.**  
-A premium, interactive Smart Campus Assistant designed to elevate your university experience with real-time insights, social connections, and a stunning "Midnight Neon" aesthetic.
+  <div>
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
+    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+    <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" />
+  </div>
+</div>
 
 ---
 
-## 🚀 Features
+## 🎨 The "Organic Premium" Aesthetic
+VibeSRM isn't just an app; it's a vibe. We've moved away from uniform, AI-looking designs to a **Hand-Crafted Organic UI**:
+- 🌌 **Aurora Backgrounds**: Shifting violet/fuchsia gradients that feel alive.
+- 🧪 **Mesh Orbs**: Asymmetric, floating light sources that drift naturally.
+- 💎 **Premium Glass**: 16px backdrop blur with subtle violet borders.
+- 🌀 **Asymmetric Delight**: Playful rotations and varied spacing for a human touch.
 
-### 🍱 Bento Grid Dashboard
-A modern, responsive dashboard layout that puts everything you need at a glance.
+---
+
+## 🚀 Visionary Features
+
+### 🍱 Bento Dashboard
+A modern, responsive layout that prioritizes what matters.
 - **Live Occupancy**: Real-time tracking of libraries, gyms, and cafes.
-- **Weekly Streaks**: Gamified stat tracking for your study sessions.
-- **Quick Actions**: One-click check-ins and status updates.
+- **Weekly Streaks**: Gamified study sessions with occupancy forecasts.
+- **Quick Check-ins**: GPS-verified entry to earn campus coins.
 
-### 🗺️ Interactive Campus Map
+### 🗾 Interactive Campus Map
 A fully immersive SVG-based map experience.
-- **Visual Hotspots**: See where the vibe is with pulsing color-coded indicators.
-- **Smart Filtering**: Toggle between Study zones, Food spots, and Gyms.
-- **Instant Navigation**: Get details and directions instantly.
+- **Visual Hotspots**: Pulsing color indicators (Cyan = Empty, Rose = Full).
+- **Smart Filtering**: Toggle between Study zones, Food, and Sports.
 
-### 👥 "Squad" Social Hub
-Stay connected with your campus circle.
-- **Study Buddies**: See where your friends are studying in real-time.
-- **Ping System**: Nudge your squad to join you for a coffee or study session.
-- **Community Groups**: Discover and join trending campus communities.
-
-### 💬 Integrated Chat
-Seamless communication for your study groups.
-- **Real-time Messaging**: Coordinate meetups without leaving the app.
-- **Group Channels**: Dedicated spaces for your classes and clubs.
+### 💬 Squad Chat Hub
+Seamless, beautiful communication.
+- **Gradient Themes**: Stunning Purple/Black/White "Midnight" chat interface.
+- **Dynamic Avatars**: Automated avatar generation using [DiceBear](https://dicebear.com/).
+- **Live Status**: Real-time "Studying at..." indicators for your friends.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Modern Tech Stack
 
-Built with a focus on performance and premium design.
-
-- **Frontend**: [React](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Font**: Google Fonts (Space Grotesk & Inter)
-
----
-
-## ⚡ Getting Started
-
-### Frontend
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/YUVRAJ-SINGH-3178/VibeSRM.git
-    cd VibeSRM
-    ```
-
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Run the development server**
-    ```bash
-    npm run dev
-    ```
-
-4.  **Build for production**
-    ```bash
-    npm run build
-    ```
-
-### Backend
-
-1.  **Navigate to server directory**
-    ```bash
-    cd server
-    npm install
-    ```
-
-2.  **Install PostgreSQL & Redis**
-    - PostgreSQL 14+: [Download](https://www.postgresql.org/download/)
-    - Redis: [Download for Windows](https://github.com/microsoftarchive/redis/releases)
-
-3.  **Run setup script**
-    ```bash
-    setup.bat
-    ```
-    This will create the database, run migrations, and seed sample data.
-
-4.  **Start Redis**
-    ```bash
-    redis-server
-    ```
-
-5.  **Start backend server**
-    ```bash
-    npm run dev
-    ```
-    Server runs on `http://localhost:5000`
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18 + Vite |
+| **Logic** | Supabase (Authentication & Realtime) |
+| **Styling** | Tailwind CSS v3 |
+| **Motion** | Framer Motion (Orchestrated Animations) |
+| **Icons** | Lucide React |
 
 ---
 
-## 🔌 API Features
+## ⚡ Setup & Launch
 
-The backend provides:
-- ✅ **JWT Authentication** - Secure user sessions
-- ✅ **GPS-Verified Check-ins** - 50m radius verification
-- ✅ **Coin Economy** - Earn rewards for studying
-- ✅ **Ghost Mode** - Anonymous studying with random names
-- ✅ **Noise Heatmap** - Real-time noise level tracking
-- ✅ **Smart Predictions** - 6-hour occupancy forecasts
-- ✅ **Real-time Updates** - Socket.io for live data
-- ✅ **Achievement System** - Unlock badges and rewards
+### 1. Requirements
+- Node.js 18+
+- Supabase Account (URL & Anon Key)
 
-See `server/README.md` for full API documentation.
+### 2. Quick Start
+```bash
+# Clone
+git clone https://github.com/YUVRAJ-SINGH-3178/VibeSRM.git
+cd VibeSRM
+
+# Install
+npm install
+
+# Environment
+# Create a .env file and add your Supabase credentials:
+# VITE_SUPABASE_URL=your_url
+# VITE_SUPABASE_ANON_KEY=your_key
+
+# Run
+npm run dev
+```
 
 ---
 
-## 🎨 Design Philosophy
-
-VibeSRM abandons the boring, generic "admin panel" look for a **top-tier, app-like experience**.
-- **Dark Mode First**: Deep charcoal backgrounds (`#050507`) reduce eye strain.
-- **Glassmorphism**: Subtle frosting and borders for depth.
-- **Micro-interactions**: Every button and card feels alive.
+## 🔌 API & Integration
+VibeSRM leverages **Supabase Realtime** for instant message delivery and live occupancy updates. 
+- ✅ **JWT Authentication**
+- ✅ **Postgres RLS Enabled**
+- ✅ **Edge Runtime Compatible**
 
 ---
 
-Made with 💜 by Yuvraj Singh
+<div align="center">
+  <p>Made with 💜 by <b>Yuvraj Singh</b></p>
+  <p><i>Elevating the student experience, one vibe at a time.</i></p>
+</div>
