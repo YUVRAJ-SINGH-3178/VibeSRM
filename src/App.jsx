@@ -65,6 +65,21 @@ const mapLocation = (loc) => ({
   photoUrl: loc.photo_url || loc.photoUrl
 });
 
+// Map backend event to frontend
+const mapEvent = (e) => ({
+  id: e.id || e._id,
+  title: e.title,
+  description: e.description,
+  type: e.type,
+  locationName: e.location_name || e.locationName || 'Campus',
+  coords: {
+    x: e.map_x || e.coords?.x || 600,
+    y: e.map_y || e.coords?.y || 450
+  },
+  isMajor: e.is_major || e.isMajor || false,
+  startTime: e.start_time || e.startTime || new Date().toISOString()
+});
+
 // Fallback data (for offline/demo mode)
 const INITIAL_LOCATIONS = [
   { id: '1', name: 'Tech Park Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 650, y: 465 }, color: 'text-vibe-cyan' },
@@ -455,14 +470,14 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
 
           {/* Major Events - Special Markers */}
           {events?.filter(e => e.isMajor).map((event, idx) => (
-            <g key={event._id || idx} className="cursor-pointer transition-all" onClick={() => onSelect({ ...event, id: event._id, type: 'event' })}>
+            <g key={event.id || idx} className="cursor-pointer transition-all" onClick={() => onSelect({ ...event, id: event.id, type: 'event' })}>
               <circle cx={event.coords.x} cy={event.coords.y} r="45" fill="none" stroke="#f59e0b" className="animate-pulse" strokeWidth="2" opacity="0.6" />
               <circle cx={event.coords.x} cy={event.coords.y} r="25" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" strokeWidth="3" filter="url(#softGlow)" />
               <Zap cx={event.coords.x} cy={event.coords.y} className="w-8 h-8 text-amber-400 -translate-x-4 -translate-y-4" />
 
-              {/* Event Label */}
-              <rect x={event.coords.x - 60} y={event.coords.y + 40} width="120" height="24" rx="12" fill="rgba(0,0,0,0.8)" stroke="#f59e0b" strokeWidth="1" />
-              <text x={event.coords.x} y={event.coords.y + 56} fill="white" fontSize="10" fontWeight="bold" textAnchor="middle">{event.title}</text>
+              {/* Event Label - Improved */}
+              <rect x={event.coords.x - 70} y={event.coords.y + 50} width="140" height="28" rx="14" fill="#0f0f1a" stroke="#f59e0b" strokeWidth="1" className="drop-shadow-lg" />
+              <text x={event.coords.x} y={event.coords.y + 68} fill="white" fontSize="11" fontWeight="bold" textAnchor="middle" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{event.title}</text>
             </g>
           ))}
 
@@ -1318,9 +1333,8 @@ export default function App() {
         }
 
         // Load events
-        const eventRes = await events.getAll();
         if (eventRes.events) {
-          setEventsData(eventRes.events);
+          setEventsData(eventRes.events.map(mapEvent));
         }
       } catch (err) {
         console.log('Backend not available, using demo data');
@@ -1398,12 +1412,12 @@ export default function App() {
         description: data.desc,
         type: data.type,
         locationName: 'Community Hub',
-        coords: { x: 500 + Math.random() * 100, y: 400 + Math.random() * 100 },
-        startTime: new Date()
+        coords: { x: 200 + Math.random() * 800, y: 150 + Math.random() * 600 },
+        startTime: new Date().toISOString()
       });
 
       if (res.event) {
-        setEventsData(prev => [res.event, ...prev]);
+        setEventsData(prev => [mapEvent(res.event), ...prev]);
         addNotification("Vibe Created! Check the Social tab. 🔥");
       }
     } catch (err) {
