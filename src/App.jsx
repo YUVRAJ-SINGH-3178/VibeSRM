@@ -16,8 +16,6 @@ import {
   AlertCircle,
   Send,
   MoreVertical,
-  Copy,
-  Trash2,
   Phone,
   Video,
   LogIn,
@@ -79,7 +77,9 @@ const mapEvent = (e) => ({
     y: e.map_y || e.coords?.y || 450
   },
   isMajor: e.is_major || e.isMajor || false,
-  startTime: e.start_time || e.startTime || new Date().toISOString()
+  startTime: e.start_time || e.startTime || new Date().toISOString(),
+  attendees: e.attendees || [],
+  creator_id: e.creator_id
 });
 
 // Fallback data (for offline/demo mode)
@@ -478,6 +478,54 @@ const Toast = ({ message, type = 'success', onClose }) => (
   </motion.div>
 );
 
+const NotificationPanel = ({ items, onClear, onClose }) => (
+  <div className="absolute right-0 top-14 w-[360px] max-h-[420px] glass-card rounded-2xl border border-white/10 shadow-2xl overflow-hidden z-50">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/20">
+      <div>
+        <p className="text-sm font-semibold text-white">Notifications</p>
+        <p className="text-[11px] text-gray-500">Chats, global chats, and vibe updates</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onClear}
+          className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition"
+        >
+          Clear
+        </button>
+        <button
+          onClick={onClose}
+          className="text-[11px] text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+    <div className="max-h-[360px] overflow-y-auto">
+      {items.length === 0 ? (
+        <div className="px-4 py-8 text-center text-gray-500 text-sm">No notifications yet.</div>
+      ) : (
+        items.map((item) => (
+          <div key={item.id} className="px-4 py-3 border-b border-white/5 hover:bg-white/[0.03] transition">
+            <div className="flex items-start gap-3">
+              <div className={cn(
+                "w-8 h-8 rounded-xl flex items-center justify-center",
+                item.category === 'vibe' ? "bg-vibe-purple/20" : item.category === 'global-chat' ? "bg-vibe-cyan/20" : "bg-white/10"
+              )}>
+                {item.category === 'vibe' ? <Zap className="w-4 h-4 text-vibe-purple" /> : item.category === 'global-chat' ? <MessageSquare className="w-4 h-4 text-vibe-cyan" /> : <Users className="w-4 h-4 text-white/70" />}
+              </div>
+              <div className="flex-1">
+                <p className={cn("text-sm", item.read ? "text-gray-400" : "text-white")}>{item.msg}</p>
+                <p className="text-[10px] text-gray-500 mt-1">{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+              {!item.read && <span className="w-2 h-2 rounded-full bg-vibe-rose mt-2" />}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  </div>
+);
+
 const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
   <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/5 bg-[#030305]/80 backdrop-blur-2xl">
     <motion.div
@@ -489,9 +537,9 @@ const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
       <Zap className="text-white w-7 h-7 fill-white" />
     </motion.div>
     <div className="flex flex-col gap-6">
-      {[Grid, MapIcon, Users, MessageSquare].map((Icon, i) => {
-        const id = ['dashboard', 'map', 'social', 'chat'][i];
-        const labels = ['Home', 'Map', 'Social', 'Chat'];
+      {[Grid, MapIcon, Users, MessageSquare, Award].map((Icon, i) => {
+        const id = ['dashboard', 'map', 'social', 'chat', 'achievements'][i];
+        const labels = ['Home', 'Map', 'Social', 'Chat', 'Achievements'];
         return (
           <motion.button
             key={id}
@@ -1004,7 +1052,7 @@ const CreateVibeModal = ({ isOpen, onClose, onCreate, locations }) => {
 
 // --- View Components ---
 
-const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification, currentUser, onJoin, onLeave, onDelete }) => {
+const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined, handleCheckIn, searchQuery, setSearchQuery, filteredLocations, addNotification, currentUser, onJoin, onLeave, onDelete, onOpenEventChat }) => {
   const [activeListTab, setActiveListTab] = useState('vibes'); // 'locations' | 'vibes'
 
   const filteredEvents = events?.filter(e =>
@@ -1080,7 +1128,14 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
 
                     {/* Message Button */}
                     <button
-                      onClick={() => addNotification('Opening chat... (Feature coming soon!)', 'info')}
+                      onClick={() => {
+                        const isJoined = selectedLoc.attendees?.includes(currentUser?.id);
+                        if (!isJoined) {
+                          addNotification('Join the vibe to chat', 'info');
+                          return;
+                        }
+                        onOpenEventChat?.(selectedLoc);
+                      }}
                       className="py-2 bg-white/10 text-white font-bold rounded-xl text-sm hover:bg-white/20 transition"
                     >
                       Message
@@ -1203,51 +1258,35 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
         </div>
       </div>
 
-      {/* Stats */}
-      <div className={cn("col-span-1 md:col-span-4 row-span-2 p-6 flex flex-col justify-between", CARD_STYLE)}>
-        <div>
-          <h3 className="text-gray-400 text-sm font-medium mb-1">Weekly Streak</h3>
-          <div className="text-4xl font-display font-bold">12hrs <span className="text-lg text-gray-500 font-normal">studying</span></div>
-        </div>
-        <div className="h-16 flex items-end gap-2">
-          {FORECAST.map((h, i) => (
-            <motion.div
-              key={i}
-              initial={{ scaleY: 0 }}
-              animate={{ scaleY: 1 }}
-              transition={{ delay: i * 0.05 }}
-              className="flex-1 bg-white/5 rounded-t-md hover:bg-gradient-to-t hover:from-vibe-purple/30 hover:to-transparent transition-all flex items-end overflow-hidden group/bar h-full origin-bottom"
-            >
-              <div className="w-full bg-gradient-to-t from-vibe-purple to-vibe-cyan group-hover/bar:from-white group-hover/bar:to-white/80 transition-all rounded-t-sm" style={{ height: `${h}%` }} />
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
       {/* Social */}
-      <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE)}>
+      <div className={cn("col-span-1 md:col-span-5 row-span-2 p-6 relative overflow-hidden", CARD_STYLE, "text-center flex flex-col items-center") }>
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-vibe-cyan/20 to-transparent blur-3xl rounded-full" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-vibe-purple/10 to-transparent blur-2xl rounded-full" />
-        <h3 className="font-display font-bold text-xl mb-4 relative z-10">Study Buddies</h3>
-        <div className="flex -space-x-4 mb-6 relative z-10">
+        <h3 className="font-display font-bold text-xl mb-4 relative z-10">Vibe Gang</h3>
+        <div className="flex -space-x-3 mb-6 relative z-10 justify-center">
           {[1, 2, 3, 4].map(i => (
             <motion.div
               key={i}
-              whileHover={{ y: -8, scale: 1.1 }}
-              className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gray-800 relative cursor-pointer shadow-lg"
+              whileHover={{ y: -8, scale: 1.12 }}
+              className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-br from-vibe-purple via-vibe-cyan to-vibe-rose shadow-[0_0_20px_rgba(124,58,237,0.35)] relative cursor-pointer"
             >
-              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} className="w-full h-full object-cover rounded-full" />
-              {i === 2 && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse" />}
+              <div className="w-full h-full rounded-full bg-[#0A0A0F] p-[2px]">
+                <img
+                  src={`https://api.dicebear.com/7.x/notionists/svg?seed=vibe-${i}`}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+              {i === 2 && <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#0A0A0F] rounded-full animate-pulse" />}
             </motion.div>
           ))}
           <motion.div
             whileHover={{ scale: 1.1 }}
-            className="w-12 h-12 rounded-full border-2 border-[#0A0A0F] bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center text-xs font-bold cursor-pointer"
+            className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center text-xs font-bold cursor-pointer shadow-lg"
           >
-            +5
+            <div className="w-full h-full rounded-full bg-[#0A0A0F] flex items-center justify-center">+5</div>
           </motion.div>
         </div>
-        <div className="flex gap-4 relative z-10">
+        <div className="flex gap-4 relative z-10 justify-center">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -1293,10 +1332,9 @@ const DashboardView = ({ locations, events, selectedLoc, setSelectedLoc, joined,
   );
 };
 
-const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification }) => {
+const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification, addNotificationItem }) => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [activeActionId, setActiveActionId] = useState(null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
@@ -1338,6 +1376,9 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
             if (newMessage.sender_id !== currentUser.id) {
               receiveSound.current.currentTime = 0;
               receiveSound.current.play().catch(() => { });
+              const sender = newMessage.sender?.username || newMessage.sender?.full_name || 'Someone';
+              const category = activeChannel === 'global' ? 'global-chat' : 'chat';
+              addNotificationItem?.(`Chat • ${activeChannelLabel}: ${sender} — ${newMessage.text}`, 'info', category);
             }
             return [...prev, newMessage];
           });
@@ -1386,15 +1427,12 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
     } catch (e) { /* ignore */ }
 
     try {
-      const returned = await chat.sendMessage(textPayload, activeChannel);
-      // Replace optimistic temp message with server-provided message
-      if (returned && returned.id) {
-        setMessages(prev => prev.map(m => (m.id === tempId ? returned : m)));
-      }
+      const { data, error } = await chat.sendMessage(textPayload, activeChannel);
+      if (error) throw error;
     } catch (err) {
       console.error("Failed to send:", err);
       setMessages(prev => prev.filter(m => m.id !== tempId));
-      addNotification?.(err?.message || 'Failed to send message', 'error');
+      // Show error toast
     }
   };
 
@@ -1529,35 +1567,13 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
               const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
               const showTime = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
 
-              const handleCopy = async (text) => {
-                try {
-                  await navigator.clipboard.writeText(text);
-                  addNotification?.('Copied to clipboard', 'success');
-                } catch (e) {
-                  console.error('Copy failed', e);
-                  addNotification?.('Copy failed', 'error');
-                }
-              };
-
-              const handleDelete = async (id) => {
-                try {
-                  if (!confirm('Delete this message? This cannot be undone.')) return;
-                  await chat.deleteMessage(id);
-                  setMessages(prev => prev.filter(m => m.id !== id));
-                  addNotification?.('Message deleted', 'success');
-                } catch (err) {
-                  console.error('Delete failed', err);
-                  addNotification?.(err?.message || 'Failed to delete message', 'error');
-                }
-              };
-
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.15 }}
                   key={msg.id}
-                  className={cn("flex gap-2.5 group", isMe ? "flex-row-reverse" : "flex-row")}
+                  className={cn("flex gap-2.5", isMe ? "flex-row-reverse" : "flex-row")}
                 >
                   <div className="w-8 flex-shrink-0">
                     {showAvatar && (
@@ -1572,50 +1588,13 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
                     {showAvatar && !isMe && (
                       <span className="text-[10px] text-gray-500 font-medium px-1">{msg.sender?.username}</span>
                     )}
-                    <div
-                      onClick={() => setActiveActionId(activeActionId === msg.id ? null : msg.id)}
-                      className={cn(
-                        "px-4 py-2.5 text-[14px] leading-relaxed relative cursor-pointer",
-                        isMe
-                          ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
-                          : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
-                      )}
-                    >
-                      <div className="relative">
-                        <div>{msg.text}</div>
-
-                        {activeActionId === msg.id && (
-                          <div className="mt-2 flex gap-2 justify-end">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleCopy(msg.text); setActiveActionId(null); }}
-                              className="flex items-center gap-2 text-xs text-gray-200 hover:text-white bg-white/6 px-3 py-1 rounded"
-                            >
-                              <Copy className="w-4 h-4" />
-                              <span>Copy</span>
-                            </button>
-
-                            {isMe && (
-                              String(msg.id).startsWith('temp-') ? (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); setActiveActionId(null); }}
-                                  className="flex items-center gap-2 text-xs text-gray-200 hover:text-white bg-white/6 px-3 py-1 rounded"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Remove</span>
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); setActiveActionId(null); }}
-                                  className="flex items-center gap-2 text-xs text-red-400 hover:text-red-500 bg-white/6 px-3 py-1 rounded"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  <span>Delete</span>
-                                </button>
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
+                    <div className={cn(
+                      "px-4 py-2.5 text-[14px] leading-relaxed relative",
+                      isMe
+                        ? "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white rounded-2xl rounded-tr-md shadow-lg shadow-violet-900/20"
+                        : "bg-white/[0.08] text-gray-200 rounded-2xl rounded-tl-md border border-white/[0.06]"
+                    )}>
+                      {msg.text}
                     </div>
                     {showTime && (
                       <span className={cn("text-[10px] text-gray-600 px-1", isMe ? "text-right" : "text-left")}>
@@ -1634,11 +1613,10 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
         <div className="relative z-10 p-4">
           <form onSubmit={handleSend} className="relative">
             <div className="flex items-center gap-3 bg-white/[0.06] backdrop-blur-md rounded-2xl border border-white/[0.08] p-1.5 pl-5 shadow-xl shadow-black/20">
-              <textarea
+              <input
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
-                rows={2}
-                className="flex-1 bg-transparent py-3 pl-3 pr-3 outline-none text-white placeholder-gray-400 text-sm resize-none h-14"
+                className="flex-1 bg-transparent py-3 outline-none text-white placeholder-gray-500 text-sm"
                 placeholder={`Type a message...`}
               />
               <button
@@ -1661,7 +1639,84 @@ const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addN
   );
 };
 
-const SocialView = ({ events, onChatWith }) => (
+const AchievementsView = ({ userStats }) => {
+  const achievements = [
+    { id: 'first-checkin', title: 'First Check-in', desc: 'Checked in for the first time', earned: true },
+    { id: 'streak-5', title: '5-Day Streak', desc: 'Keep the momentum going', earned: false },
+    { id: 'vibe-creator', title: 'Vibe Creator', desc: 'Created your first vibe', earned: true }
+  ];
+
+  const leaderboard = [
+    { id: 'u1', name: 'Riya Sharma', score: 1280 },
+    { id: 'u2', name: 'Arjun Mehta', score: 1180 },
+    { id: 'u3', name: 'You', score: userStats?.overview?.totalCoins || 0 }
+  ];
+
+  const badges = ['Top 10%', 'Night Owl', 'Streak Master'];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-12 gap-6 h-auto">
+      <div className={cn("col-span-1 md:col-span-4 p-6", CARD_STYLE)}>
+        <h3 className="text-lg font-display font-bold mb-4">Your Stats</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
+            <span className="text-sm text-gray-400">Coins</span>
+            <span className="text-xl font-bold text-vibe-purple">{userStats?.overview?.totalCoins || 0}</span>
+          </div>
+          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
+            <span className="text-sm text-gray-400">Streak</span>
+            <span className="text-xl font-bold text-vibe-cyan">{userStats?.overview?.currentStreak || 0}</span>
+          </div>
+          <div className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
+            <span className="text-sm text-gray-400">Studied</span>
+            <span className="text-xl font-bold text-amber-400">{(userStats?.overview?.totalHours || 0).toFixed(1)}h</span>
+          </div>
+        </div>
+      </div>
+
+      <div className={cn("col-span-1 md:col-span-5 p-6", CARD_STYLE)}>
+        <h3 className="text-lg font-display font-bold mb-4">Achievements</h3>
+        <div className="space-y-3">
+          {achievements.map(a => (
+            <div key={a.id} className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/10">
+              <div>
+                <p className={cn("font-semibold", a.earned ? "text-white" : "text-gray-400")}>{a.title}</p>
+                <p className="text-xs text-gray-500 mt-1">{a.desc}</p>
+              </div>
+              <span className={cn("text-xs font-bold px-3 py-1 rounded-full",
+                a.earned ? "bg-emerald-500/20 text-emerald-400" : "bg-white/10 text-gray-400"
+              )}>
+                {a.earned ? "Unlocked" : "Locked"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className={cn("col-span-1 md:col-span-3 p-6", CARD_STYLE)}>
+        <h3 className="text-lg font-display font-bold mb-4">Leaderboard</h3>
+        <div className="space-y-3">
+          {leaderboard.map((l, idx) => (
+            <div key={l.id} className="flex items-center justify-between bg-white/5 rounded-xl p-3 border border-white/10">
+              <span className="text-sm text-gray-300">#{idx + 1} {l.name}</span>
+              <span className="text-sm font-bold text-vibe-purple">{l.score}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5">
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Badges</h4>
+          <div className="flex flex-wrap gap-2">
+            {badges.map(b => (
+              <span key={b} className="text-[10px] px-3 py-1 rounded-full bg-white/10 text-gray-300">{b}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const SocialView = ({ events, onChatWith, onJoinEvent, onOpenEventChat, currentUser }) => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[800px] grid grid-cols-1 md:grid-cols-3 gap-6">
     <div className={cn("col-span-2 p-8", CARD_STYLE)}>
       <h2 className="text-3xl font-display font-bold mb-6">Your Squad</h2>
@@ -1703,7 +1758,38 @@ const SocialView = ({ events, onChatWith }) => (
                 {[1, 2, 3].map(j => <div key={j} className="w-6 h-6 rounded-full bg-gray-600 border border-black" />)}
                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] border border-black">+{Math.floor(Math.random() * 50)}</div>
               </div>
-              <button className="text-xs font-bold text-white hover:text-vibe-purple transition">Join Event →</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const isJoined = event.attendees?.includes(currentUser?.id);
+                    if (isJoined) return;
+                    onJoinEvent?.(event.id);
+                  }}
+                  className={cn(
+                    "text-xs font-bold transition",
+                    event.attendees?.includes(currentUser?.id)
+                      ? "text-green-400 cursor-default"
+                      : "text-white hover:text-vibe-purple"
+                  )}
+                >
+                  {event.attendees?.includes(currentUser?.id) ? "Joined" : "Join Event →"}
+                </button>
+                <button
+                  onClick={() => {
+                    const isJoined = event.attendees?.includes(currentUser?.id);
+                    if (!isJoined) return;
+                    onOpenEventChat?.(event);
+                  }}
+                  className={cn(
+                    "text-[11px] px-2 py-1 rounded-md transition",
+                    event.attendees?.includes(currentUser?.id)
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "bg-white/5 text-gray-500 cursor-not-allowed"
+                  )}
+                >
+                  Chat
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -1738,6 +1824,8 @@ export default function App() {
   const [joined, setJoined] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
+  const [notificationFeed, setNotificationFeed] = useState([]);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [time, setTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -1750,6 +1838,9 @@ export default function App() {
   const [activeChannel, setActiveChannel] = useState('global');
   const [dmChannels, setDmChannels] = useState([]);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const activeTabRef = useRef(activeTab);
+  const activeChannelRef = useRef(activeChannel);
+  const channelLabelRef = useRef({});
 
   // Check for existing token and load user
   // Supabase Auth Listener
@@ -1810,6 +1901,52 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Realtime notifications for new vibes
+  useEffect(() => {
+    const channel = supabase
+      .channel('events-notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'events' }, (payload) => {
+        if (payload?.new) {
+          if (currentUser?.id && payload.new.creator_id === currentUser.id) return;
+          const newEvent = mapEvent(payload.new);
+          setEventsData(prev => (prev.some(e => e.id === newEvent.id) ? prev : [newEvent, ...prev]));
+          addNotificationItem(`New vibe created: ${newEvent.title}`, 'success', 'vibe');
+          addNotification('New vibe just dropped ✨', 'info');
+        }
+      })
+      .subscribe();
+
+    return () => {
+      if (channel?.unsubscribe) channel.unsubscribe();
+    };
+  }, [currentUser]);
+
+  // Realtime notifications for chats (global + DMs)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channelsToWatch = [...DEFAULT_CHAT_CHANNELS.map(c => c.id), ...dmChannels.map(c => c.id)];
+    const uniqueChannels = Array.from(new Set(channelsToWatch));
+    const subscriptions = uniqueChannels.map((channelId) =>
+      chat.subscribeToMessages(channelId, (newMessage) => {
+        if (!newMessage || newMessage.sender_id === currentUser.id) return;
+
+        const isActiveChat = activeTabRef.current === 'chat' && activeChannelRef.current === channelId;
+        if (isActiveChat) return;
+
+        const label = channelLabelRef.current[channelId] || channelId;
+        const sender = newMessage.sender?.username || newMessage.sender?.full_name || 'Someone';
+        const prefix = channelId === 'global' ? 'Global chat' : 'Chat';
+        addNotificationItem(`${prefix} • ${label}: ${sender} — ${newMessage.text}`, 'info', channelId === 'global' ? 'global-chat' : 'chat');
+        addNotification(`New message in ${label}`, 'info');
+      })
+    );
+
+    return () => {
+      subscriptions.forEach((sub) => sub?.unsubscribe && sub.unsubscribe());
+    };
+  }, [currentUser, dmChannels]);
+
   // Check for active checkin
   useEffect(() => {
     if (currentUser) {
@@ -1833,12 +1970,30 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    activeChannelRef.current = activeChannel;
+  }, [activeChannel]);
+
   const addNotification = (msg, type = 'success') => {
     const id = Date.now();
     setNotifications(prev => [...prev, { id, msg, type }]);
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
     }, 3000);
+  };
+
+  const addNotificationItem = (msg, type = 'info', category = 'general') => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const createdAt = new Date().toISOString();
+    setNotificationFeed(prev => [{ id, msg, type, category, createdAt, read: false }, ...prev].slice(0, 50));
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotificationFeed(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const handleAuth = async (userData) => {
@@ -1882,6 +2037,7 @@ export default function App() {
       if (res.event) {
         setEventsData(prev => [mapEvent(res.event), ...prev]);
         addNotification("Vibe Created! Check the Social tab. 🔥");
+        addNotificationItem(`Your vibe is live: ${res.event.title || 'New Vibe'}`, 'success', 'vibe');
       }
     } catch (err) {
       console.error(err);
@@ -1906,6 +2062,10 @@ export default function App() {
         setEventsData(prev => prev.map(e =>
           e.id === eventId ? mapEvent(res.event) : e
         ));
+        const joinedEvent = mapEvent(res.event);
+        ensureEventChannel(joinedEvent);
+        setActiveChannel(`event-${joinedEvent.id}`);
+        setActiveTab('chat');
         addNotification("Joined the vibe! 🎉");
       }
     } catch (err) {
@@ -2021,11 +2181,33 @@ export default function App() {
     });
   }, [dmChannels]);
 
+  useEffect(() => {
+    const map = {};
+    chatChannels.forEach((ch) => {
+      map[ch.id] = ch.label;
+    });
+    channelLabelRef.current = map;
+  }, [chatChannels]);
+
   const handleChatWith = (member) => {
     const channelId = `dm-${member.id}`;
     const channelLabel = member.name;
     setDmChannels((prev) => (prev.some((ch) => ch.id === channelId) ? prev : [...prev, { id: channelId, label: channelLabel }]));
     setActiveChannel(channelId);
+    setActiveTab('chat');
+  };
+
+  const ensureEventChannel = (event) => {
+    if (!event?.id) return;
+    const channelId = `event-${event.id}`;
+    const channelLabel = `${event.title} Chat`;
+    setDmChannels((prev) => (prev.some((ch) => ch.id === channelId) ? prev : [...prev, { id: channelId, label: channelLabel }]));
+  };
+
+  const openEventChat = (event) => {
+    if (!event?.id) return;
+    ensureEventChannel(event);
+    setActiveChannel(`event-${event.id}`);
     setActiveTab('chat');
   };
 
@@ -2042,6 +2224,8 @@ export default function App() {
       setCurrentUser(data.user);
     } catch (e) { /* ignore */ }
   };
+
+  const unreadCount = useMemo(() => notificationFeed.filter(n => !n.read).length, [notificationFeed]);
 
   // Main Content Router
   const renderContent = () => {
@@ -2062,13 +2246,16 @@ export default function App() {
           onJoin={handleJoinEvent}
           onLeave={handleLeaveEvent}
           onDelete={handleDeleteEvent}
+          onOpenEventChat={openEventChat}
         />;
       case 'map':
         return <FullMapView locations={locations} events={eventsData} selected={selectedLoc} onSelect={setSelectedLoc} />;
       case 'social':
-        return <SocialView events={eventsData} onChatWith={handleChatWith} />;
+        return <SocialView events={eventsData} onChatWith={handleChatWith} onJoinEvent={handleJoinEvent} onOpenEventChat={openEventChat} currentUser={currentUser} />;
       case 'chat':
-        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} />;
+        return <ChatView currentUser={currentUser} activeChannel={activeChannel} setActiveChannel={setActiveChannel} channels={chatChannels} addNotification={addNotification} addNotificationItem={addNotificationItem} />;
+      case 'achievements':
+        return <AchievementsView userStats={userStats} />;
       default:
         return <DashboardView locations={locations} events={eventsData} />;
     }
@@ -2177,30 +2364,6 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center gap-6">
-              {/* User Stats */}
-              {currentUser && userStats && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="hidden lg:flex items-center gap-4 px-5 py-3 glass-card rounded-2xl"
-                >
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-vibe-purple">{userStats.overview?.totalCoins || 0}</div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Coins</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-vibe-cyan">{userStats.overview?.currentStreak || 0}</div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Streak</div>
-                  </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-amber-400">{(userStats.overview?.totalHours || 0).toFixed(1)}h</div>
-                    <div className="text-[10px] text-gray-400 uppercase tracking-wider">Studied</div>
-                  </div>
-                </motion.div>
-              )}
-
               <div className="text-right hidden md:block">
                 <div className="text-3xl font-bold font-display text-white">{time}</div>
                 <div className="text-sm text-vibe-purple font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}</div>
@@ -2246,10 +2409,32 @@ export default function App() {
                 </button>
               )}
 
-              <button className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-3 right-3 w-2 h-2 bg-vibe-rose rounded-full animate-pulse" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowNotificationPanel(prev => {
+                      const next = !prev;
+                      if (!prev && notificationFeed.length > 0) markAllNotificationsRead();
+                      return next;
+                    });
+                  }}
+                  className="w-12 h-12 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition relative"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-vibe-rose text-white text-[10px] rounded-full flex items-center justify-center">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                {showNotificationPanel && (
+                  <NotificationPanel
+                    items={notificationFeed}
+                    onClear={() => setNotificationFeed([])}
+                    onClose={() => setShowNotificationPanel(false)}
+                  />
+                )}
+              </div>
             </div>
           </header>
 
