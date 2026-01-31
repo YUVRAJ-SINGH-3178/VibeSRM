@@ -423,8 +423,6 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 150 250 L 250 200 L 350 250 L 350 400 L 250 450 L 150 400 Z" fill="url(#purpleBuild)" stroke="#a855f7" strokeWidth="3" opacity="0.9" />
             <path d="M 250 200 L 350 250 L 350 400 L 250 350 Z" fill="rgba(124,58,237,0.4)" />
             <path d="M 150 250 L 250 200 L 250 350 L 150 400 Z" fill="rgba(124,58,237,0.6)" />
-            <circle cx="250" cy="325" r="40" fill="rgba(168,85,247,0.2)" stroke="#a855f7" strokeWidth="2" />
-            <text x="250" y="335" fill="#e9d5ff" fontSize="18" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">ACADEMIC</text>
           </g>
 
           {/* Library - Main Building (Larger, Central) */}
@@ -432,9 +430,6 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 500 350 L 650 280 L 800 350 L 800 550 L 650 620 L 500 550 Z" fill="url(#cyanBuild)" stroke="#22d3ee" strokeWidth="4" opacity="0.95" />
             <path d="M 650 280 L 800 350 L 800 550 L 650 480 Z" fill="rgba(6,182,212,0.5)" />
             <path d="M 500 350 L 650 280 L 650 480 L 500 550 Z" fill="rgba(6,182,212,0.7)" />
-            <circle cx="650" cy="465" r="60" fill="rgba(34,211,238,0.15)" stroke="#22d3ee" strokeWidth="3" />
-            <text x="650" y="460" fill="#cffafe" fontSize="24" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">LIBRARY</text>
-            <text x="650" y="485" fill="#67e8f9" fontSize="14" textAnchor="middle" fontFamily="system-ui">Central Hub</text>
           </g>
 
           {/* Cafeteria */}
@@ -442,14 +437,12 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 850 200 L 950 160 L 1050 200 L 1050 320 L 950 360 L 850 320 Z" fill="url(#amberBuild)" stroke="#fbbf24" strokeWidth="3" opacity="0.9" />
             <path d="M 950 160 L 1050 200 L 1050 320 L 950 280 Z" fill="rgba(251,191,36,0.4)" />
             <path d="M 850 200 L 950 160 L 950 280 L 850 320 Z" fill="rgba(251,191,36,0.6)" />
-            <text x="950" y="250" fill="#fef3c7" fontSize="18" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">CAFETERIA</text>
           </g>
 
           {/* Sports Complex */}
           <g filter="url(#softGlow)">
             <ellipse cx="900" cy="650" rx="120" ry="80" fill="url(#roseBuild)" stroke="#fb7185" strokeWidth="3" opacity="0.9" />
             <ellipse cx="900" cy="640" rx="80" ry="50" fill="rgba(251,113,133,0.2)" stroke="#fb7185" strokeWidth="2" />
-            <text x="900" y="655" fill="#fecdd3" fontSize="20" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">SPORTS</text>
           </g>
 
           {/* Tech Park */}
@@ -457,15 +450,12 @@ const BentoMap = ({ locations, events, selected, onSelect, fullScreen = false })
             <path d="M 150 600 L 250 560 L 350 600 L 350 720 L 250 760 L 150 720 Z" fill="rgba(168,85,247,0.3)" stroke="#a78bfa" strokeWidth="3" opacity="0.85" />
             <path d="M 250 560 L 350 600 L 350 720 L 250 680 Z" fill="rgba(139,92,246,0.25)" />
             <path d="M 150 600 L 250 560 L 250 680 L 150 720 Z" fill="rgba(139,92,246,0.4)" />
-            <text x="250" y="670" fill="#ddd6fe" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">TECH PARK</text>
           </g>
 
           {/* Innovation Hub */}
           <g filter="url(#softGlow)">
             <rect x="850" y="450" width="180" height="140" rx="12" fill="rgba(16,185,129,0.25)" stroke="#10b981" strokeWidth="2" opacity="0.85" />
             <rect x="860" y="460" width="160" height="10" rx="5" fill="rgba(16,185,129,0.4)" />
-            <text x="940" y="530" fill="#d1fae5" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="system-ui">INNOVATION</text>
-            <text x="940" y="550" fill="#6ee7b7" fontSize="12" textAnchor="middle" fontFamily="system-ui">Hub</text>
           </g>
 
           {/* Major Events - Special Markers */}
@@ -1411,9 +1401,10 @@ export default function App() {
         title: data.name,
         description: data.desc,
         type: data.type,
-        locationName: 'Community Hub',
-        coords: { x: 200 + Math.random() * 800, y: 150 + Math.random() * 600 },
-        startTime: new Date().toISOString()
+        location_name: 'Community Hub',
+        start_time: new Date().toISOString(),
+        coords: { x: Math.floor(200 + Math.random() * 800), y: Math.floor(150 + Math.random() * 600) },
+        is_major: true
       });
 
       if (res.event) {
