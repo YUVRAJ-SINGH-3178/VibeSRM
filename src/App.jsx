@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import api, { auth, locations as locationsApi, checkins, user, social, ghost } from './api.js';
+import api, { auth, locations as locationsApi, checkins, user, social, ghost, events } from './api.js';
 
 // --- Utilities ---
 function cn(...inputs) {
