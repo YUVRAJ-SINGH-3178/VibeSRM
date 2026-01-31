@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-deep: 5 5 10;
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    @apply bg-[#030305] text-white antialiased overflow-x-hidden font-sans;
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 100% 0%, rgba(220, 38, 38, 0.05) 0%, transparent 40%);
+  }
+}
+
+@layer components {
+
+  /* Minimal utilities remaining in CSS */
+  .text-glow {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  }
+
+  .map-grid {
+    background-size: 40px 40px;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
