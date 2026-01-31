@@ -240,24 +240,83 @@ const NavBar = ({ active, setTab }) => (
 
 const BentoMap = ({ locations, selected, onSelect, fullScreen = false }) => (
   <div className={cn("w-full h-full relative overflow-hidden bg-[#0A0A0E] rounded-[2rem]", fullScreen ? "rounded-none" : "")}>
-    <div className="absolute inset-0 map-grid opacity-30" />
-    <svg className="w-full h-full absolute inset-0 pointer-events-none" viewBox="0 0 1000 800">
-      <path d="M150,200 L550,100 L950,250 L550,350 Z" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" />
-      <path d="M150,550 L550,450 L950,600 L550,700 Z" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" />
-      <path d="M550,350 L550,450" stroke="rgba(255,255,255,0.05)" strokeDasharray="5,5" />
+    {/* SRM Campus Map Background */}
+    <div className="absolute inset-0 opacity-40">
+      <div className="w-full h-full bg-gradient-to-br from-[#1a1a2e] via-[#0f0f1e] to-[#050507]" />
+      <div className="absolute inset-0 map-grid opacity-20" />
+    </div>
 
+    {/* Campus Buildings Overlay */}
+    <svg className="w-full h-full absolute inset-0 pointer-events-none opacity-30" viewBox="0 0 1000 800">
+      {/* Academic Block 1 */}
+      <rect x="100" y="150" width="150" height="120" fill="rgba(124,58,237,0.1)" stroke="rgba(124,58,237,0.3)" strokeWidth="2" rx="8" />
+      <text x="175" y="215" fill="rgba(124,58,237,0.6)" fontSize="12" textAnchor="middle" fontWeight="bold">ACADEMIC 1</text>
+
+      {/* Academic Block 2 */}
+      <rect x="300" y="100" width="150" height="120" fill="rgba(59,130,246,0.1)" stroke="rgba(59,130,246,0.3)" strokeWidth="2" rx="8" />
+      <text x="375" y="165" fill="rgba(59,130,246,0.6)" fontSize="12" textAnchor="middle" fontWeight="bold">ACADEMIC 2</text>
+
+      {/* Library */}
+      <rect x="200" y="300" width="180" height="150" fill="rgba(16,185,129,0.1)" stroke="rgba(16,185,129,0.3)" strokeWidth="2" rx="8" />
+      <text x="290" y="380" fill="rgba(16,185,129,0.6)" fontSize="14" textAnchor="middle" fontWeight="bold">LIBRARY</text>
+
+      {/* Food Court */}
+      <rect x="500" y="200" width="140" height="100" fill="rgba(251,191,36,0.1)" stroke="rgba(251,191,36,0.3)" strokeWidth="2" rx="8" />
+      <text x="570" y="255" fill="rgba(251,191,36,0.6)" fontSize="12" textAnchor="middle" fontWeight="bold">CAFETERIA</text>
+
+      {/* Sports Complex */}
+      <rect x="700" y="150" width="180" height="140" fill="rgba(239,68,68,0.1)" stroke="rgba(239,68,68,0.3)" strokeWidth="2" rx="8" />
+      <text x="790" y="225" fill="rgba(239,68,68,0.6)" fontSize="12" textAnchor="middle" fontWeight="bold">SPORTS</text>
+
+      {/* Tech Park */}
+      <rect x="100" y="500" width="160" height="120" fill="rgba(168,85,247,0.1)" stroke="rgba(168,85,247,0.3)" strokeWidth="2" rx="8" />
+      <text x="180" y="565" fill="rgba(168,85,247,0.6)" fontSize="12" textAnchor="middle" fontWeight="bold">TECH PARK</text>
+
+      {/* Pathways */}
+      <path d="M 250 270 Q 400 300 550 250" stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none" strokeDasharray="5,5" />
+      <path d="M 380 220 L 500 250" stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none" strokeDasharray="5,5" />
+      <path d="M 290 450 L 700 290" stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none" strokeDasharray="5,5" />
+    </svg>
+
+    {/* Location Markers */}
+    <svg className="w-full h-full absolute inset-0 pointer-events-none" viewBox="0 0 1000 800">
       {locations.map(loc => (
         <g key={loc.id} className="pointer-events-auto cursor-pointer" onClick={() => onSelect(loc)}>
-          <circle cx={loc.coords.x} cy={loc.coords.y} r="8" className={cn("fill-current", loc.color)} />
-          <circle cx={loc.coords.x} cy={loc.coords.y} r="20" stroke="currentColor" fill="none" className={cn("opacity-30", loc.color)} />
+          {/* Pulsing ring for selected */}
           {selected?.id === loc.id && (
-            <circle cx={loc.coords.x} cy={loc.coords.y} r="40" stroke="currentColor" fill="none" className={cn("animate-ping opacity-20", loc.color)} />
+            <circle cx={loc.coords.x} cy={loc.coords.y} r="50" stroke="currentColor" fill="none" className={cn("animate-ping opacity-20", loc.color)} />
           )}
+
+          {/* Outer glow ring */}
+          <circle cx={loc.coords.x} cy={loc.coords.y} r="24" stroke="currentColor" fill="none" className={cn("opacity-20", loc.color)} strokeWidth="2" />
+
+          {/* Main marker */}
+          <circle cx={loc.coords.x} cy={loc.coords.y} r="12" className={cn("fill-current drop-shadow-[0_0_8px_currentColor]", loc.color)} />
+
+          {/* Center dot */}
+          <circle cx={loc.coords.x} cy={loc.coords.y} r="4" fill="white" className="opacity-90" />
+
+          {/* Location label */}
+          <text
+            x={loc.coords.x}
+            y={loc.coords.y - 35}
+            fill="white"
+            fontSize="11"
+            fontWeight="600"
+            textAnchor="middle"
+            className="drop-shadow-lg pointer-events-none"
+          >
+            {loc.name.split(' ')[0]}
+          </text>
         </g>
       ))}
     </svg>
+
+    {/* Map Controls */}
     <div className="absolute bottom-6 right-6 flex gap-2">
-      <button className="p-3 bg-black/50 backdrop-blur rounded-xl border border-white/10 hover:bg-white/10 transition"><Navigation className="w-5 h-5" /></button>
+      <button className="p-3 bg-black/50 backdrop-blur rounded-xl border border-white/10 hover:bg-white/10 transition">
+        <Navigation className="w-5 h-5" />
+      </button>
     </div>
   </div>
 );
@@ -721,10 +780,22 @@ export default function App() {
       try {
         const result = await checkins.checkOut(activeCheckin.id, {});
         setActiveCheckin(null);
+
+        // Find and update the location in joined set
+        const locationId = loc.id || activeCheckin.locationId;
         const newJoined = new Set(joined);
-        newJoined.delete(loc.id);
+        newJoined.delete(locationId);
         setJoined(newJoined);
+
         addNotification(`Checked out! Earned ${result.coinsEarned} coins 🪙`);
+
+        // Reload user stats
+        try {
+          const stats = await user.getStats();
+          setUserStats(stats);
+        } catch (err) {
+          console.log('Could not reload stats');
+        }
       } catch (err) {
         addNotification(err.message, 'error');
       }
@@ -744,7 +815,11 @@ export default function App() {
           120
         );
 
-        setActiveCheckin({ id: result.checkinId, locationName: loc.name });
+        setActiveCheckin({
+          id: result.checkinId,
+          locationName: loc.name,
+          locationId: loc.id
+        });
         setJoined(new Set(joined).add(loc.id));
         addNotification(`Checked in to ${loc.name}! +${result.coinsEarned} coins 🪙`);
       } catch (err) {
@@ -805,7 +880,7 @@ export default function App() {
           <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
           <span className="font-medium">Studying at {activeCheckin.locationName}</span>
           <button
-            onClick={() => handleCheckIn({ id: activeCheckin.id })}
+            onClick={() => handleCheckIn({ id: activeCheckin.locationId })}
             className="px-4 py-2 bg-white text-black text-sm font-bold rounded-xl hover:scale-105 transition"
           >
             End Session
