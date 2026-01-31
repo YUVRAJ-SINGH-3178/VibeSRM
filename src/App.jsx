@@ -106,6 +106,44 @@ const DAILY_ACTIVITY = [
   { day: 'Sun', study: 2.9, play: 1.2, other: 1.5 }
 ];
 
+// Empty classrooms data - simulated based on current time
+const CLASSROOM_DATA = [
+  { id: 'S301', block: 'S Block', floor: 3, capacity: 60 },
+  { id: 'S302', block: 'S Block', floor: 3, capacity: 60 },
+  { id: 'S303', block: 'S Block', floor: 3, capacity: 60 },
+  { id: 'S304', block: 'S Block', floor: 3, capacity: 60 },
+  { id: 'S305', block: 'S Block', floor: 3, capacity: 40 },
+  { id: 'S201', block: 'S Block', floor: 2, capacity: 60 },
+  { id: 'S202', block: 'S Block', floor: 2, capacity: 60 },
+  { id: 'S203', block: 'S Block', floor: 2, capacity: 60 },
+  { id: 'V101', block: 'V Block', floor: 1, capacity: 80 },
+  { id: 'V102', block: 'V Block', floor: 1, capacity: 80 },
+  { id: 'V103', block: 'V Block', floor: 1, capacity: 60 },
+  { id: 'V104', block: 'V Block', floor: 1, capacity: 60 },
+  { id: 'V105', block: 'V Block', floor: 1, capacity: 40 },
+  { id: 'V106', block: 'V Block', floor: 1, capacity: 40 },
+  { id: 'V107', block: 'V Block', floor: 1, capacity: 40 },
+  { id: 'V108', block: 'V Block', floor: 1, capacity: 40 },
+  { id: 'V109', block: 'V Block', floor: 1, capacity: 40 },
+  { id: 'TP501', block: 'TP Block', floor: 5, capacity: 120 },
+  { id: 'TP502', block: 'TP Block', floor: 5, capacity: 120 },
+  { id: 'TP401', block: 'TP Block', floor: 4, capacity: 100 },
+  { id: 'TP402', block: 'TP Block', floor: 4, capacity: 100 },
+  { id: 'BEL001', block: 'BEL', floor: 0, capacity: 200 },
+  { id: 'BEL002', block: 'BEL', floor: 0, capacity: 150 },
+];
+
+// Function to get currently empty classrooms (simulated)
+const getEmptyClassrooms = () => {
+  const hour = new Date().getHours();
+  // Simulate different empty classrooms based on time of day
+  const seed = hour % 12;
+  return CLASSROOM_DATA.filter((_, index) => {
+    // Simulate ~40-60% of classrooms being empty at any time
+    return (index + seed) % 3 !== 0 || hour < 8 || hour > 18;
+  }).slice(0, 12); // Show max 12 empty classrooms
+};
+
 const DEFAULT_CHAT_CHANNELS = [
   { id: 'global', label: 'Global' },
   { id: 'study-help', label: 'Study Help' },
@@ -658,9 +696,44 @@ const BentoMap = ({ locations = [], events = [], selected, onSelect, fullScreen 
       </div>
     </div>
 
+    {/* Empty Classrooms Panel - Right Side (Only in fullScreen/Map view) */}
+    {fullScreen && (
+      <div className="absolute top-16 right-4 bottom-16 w-44 md:w-52 bg-black/60 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden z-10">
+        <div className="p-3 border-b border-white/10 bg-emerald-500/10">
+          <h3 className="text-xs font-bold text-emerald-400 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Empty Classrooms
+          </h3>
+          <p className="text-[10px] text-gray-400 mt-0.5">Available right now</p>
+        </div>
+        <div className="overflow-y-auto max-h-[calc(100%-60px)] p-2 space-y-1.5 scrollbar-thin scrollbar-thumb-white/10">
+          {getEmptyClassrooms().map((room) => (
+            <motion.div
+              key={room.id}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="p-2.5 bg-white/5 hover:bg-emerald-500/10 rounded-xl border border-white/5 hover:border-emerald-500/30 cursor-pointer transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">{room.id}</span>
+                <span className="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-md font-medium">FREE</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] text-gray-500">{room.block}</span>
+                <span className="text-[10px] text-gray-600">•</span>
+                <span className="text-[10px] text-gray-500">Floor {room.floor}</span>
+                <span className="text-[10px] text-gray-600">•</span>
+                <span className="text-[10px] text-gray-500">{room.capacity} seats</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    )}
+
     {/* Map Container - Simple Flex Grid */}
-    <div className="absolute inset-0 pt-16 pb-16 px-4 flex items-center justify-center">
-      <div className="grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 max-w-5xl w-full">
+    <div className={cn("absolute inset-0 pt-16 pb-16 px-4 flex items-center justify-center", fullScreen && "pr-52 md:pr-60")}>
+      <div className="grid grid-cols-3 grid-rows-2 gap-3 md:gap-6 max-w-4xl w-full">
         {/* Render all 5 locations from INITIAL_LOCATIONS directly */}
         {INITIAL_LOCATIONS.map((loc) => (
           <div key={loc.id} className="flex items-center justify-center">
