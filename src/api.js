@@ -288,10 +288,15 @@ export const events = {
         const { data, error } = await supabase
             .from('events')
             .insert({
-                ...eventData,
+                title: eventData.title,
+                description: eventData.description,
+                type: eventData.type,
+                location_name: eventData.location_name,
+                start_time: eventData.start_time,
+                is_major: eventData.is_major || false,
                 creator_id: user.id,
-                map_x: eventData.coords?.x,
-                map_y: eventData.coords?.y
+                map_x: eventData.coords?.x || Math.floor(200 + Math.random() * 800),
+                map_y: eventData.coords?.y || Math.floor(150 + Math.random() * 600)
             })
             .select()
             .single();
