@@ -140,7 +140,7 @@ export const SettingsView = ({ currentUser, onLogout, onUpdateProfile }) => {
                                         </div>
                                         <div>
                                             <h4 className="font-bold text-white">Light Mode</h4>
-                                            <p className="text-xs text-gray-500 mt-1">Coming Soon</p>
+                                            <p className="text-xs text-gray-500 mt-1">High Contrast Beta</p>
                                         </div>
                                     </div>
                                 </div>
@@ -148,27 +148,51 @@ export const SettingsView = ({ currentUser, onLogout, onUpdateProfile }) => {
                         </div>
 
                         <div className="space-y-4">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Accent Color</label>
-                            <div className="p-6 rounded-3xl bg-[#15151a] border border-white/5">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Accent & Intensity</label>
+                            <div className="p-8 rounded-[2rem] bg-[#15151a] border border-white/5 space-y-8">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-vibe-purple to-vibe-cyan flex items-center justify-center text-white shadow-lg">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-vibe-purple to-vibe-cyan flex items-center justify-center text-white shadow-lg">
                                             <Palette className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-white">Brand Color</h4>
-                                            <p className="text-sm text-gray-500">Choose your vibe signature.</p>
+                                            <h4 className="font-bold text-white">Brand Accent</h4>
+                                            <p className="text-sm text-gray-500">Global theme color signature.</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-3">
-                                        {['bg-vibe-purple', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500', 'bg-amber-500'].map((c, i) => (
-                                            <div key={c} className={cn(
-                                                "w-8 h-8 rounded-full cursor-pointer hover:scale-110 transition border-2 border-transparent hover:border-white shadow-lg",
-                                                c,
-                                                i === 0 && "ring-2 ring-white ring-offset-2 ring-offset-[#15151a]"
-                                            )} />
+                                        {[
+                                            { name: 'vibe-purple', color: '#7C3AED' },
+                                            { name: 'blue-500', color: '#3B82F6' },
+                                            { name: 'emerald-500', color: '#10B981' },
+                                            { name: 'rose-500', color: '#F43F5E' },
+                                            { name: 'amber-500', color: '#F59E0B' }
+                                        ].map((c, i) => (
+                                            <button
+                                                key={c.name}
+                                                title={c.name}
+                                                className={cn(
+                                                    "w-10 h-10 rounded-full cursor-pointer hover:scale-110 active:scale-90 transition border-4 border-transparent hover:border-white shadow-lg",
+                                                    i === 0 ? "bg-vibe-purple" :
+                                                        i === 1 ? "bg-blue-500" :
+                                                            i === 2 ? "bg-emerald-500" :
+                                                                i === 3 ? "bg-rose-500" : "bg-amber-500",
+                                                    i === 0 && "ring-4 ring-vibe-purple/20 ring-offset-4 ring-offset-[#15151a]"
+                                                )}
+                                            />
                                         ))}
                                     </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-400 font-bold">Vibe Intensity</span>
+                                        <span className="text-vibe-purple font-bold">85%</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full w-[85%] bg-gradient-to-r from-vibe-purple to-vibe-cyan rounded-full shadow-[0_0_10px_rgba(124,58,237,0.5)]" />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Adjusts particle density and background blur</p>
                                 </div>
                             </div>
                         </div>
@@ -183,27 +207,38 @@ export const SettingsView = ({ currentUser, onLogout, onUpdateProfile }) => {
                         </div>
 
                         <div className="space-y-4">
-                            {['Event Reminders', 'Chat Messages', 'Friend Requests', 'Leaderboard Updates', 'Vibe Recommendations'].map((item, i) => (
-                                <div key={item} className="flex items-center justify-between p-5 rounded-3xl bg-[#15151a] border border-white/5 hover:border-white/10 transition group">
-                                    <div className="flex items-center gap-4">
-                                        <div className={cn(
-                                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                                            i === 0 ? "bg-amber-500/20 text-amber-500" :
-                                                i === 1 ? "bg-vibe-cyan/20 text-vibe-cyan" :
-                                                    "bg-white/10 text-gray-400"
-                                        )}>
-                                            <Bell className="w-5 h-5" />
+                            {[
+                                { label: 'Event Reminders', active: true, desc: 'Notifies you when your vibes are starting.' },
+                                { label: 'Chat Messages', active: true, desc: 'Real-time alerts for holographic chats.' },
+                                { label: 'Friend Requests', active: true, desc: 'New squad connections pending.' },
+                                { label: 'Leaderboard Updates', active: false, desc: 'Weekly ranking changes.' },
+                                { label: 'Vibe Recommendations', active: false, desc: 'AI-suggested study zones.' }
+                            ].map((item, i) => (
+                                <div key={item.label} className="p-6 rounded-3xl bg-[#15151a] border border-white/5 hover:border-white/10 transition group">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={cn(
+                                                "w-12 h-12 rounded-2xl flex items-center justify-center",
+                                                i === 0 ? "bg-amber-500/20 text-amber-500" :
+                                                    i === 1 ? "bg-vibe-cyan/20 text-vibe-cyan" :
+                                                        "bg-white/10 text-gray-400"
+                                            )}>
+                                                <Bell className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-white block">{item.label}</span>
+                                                <span className="text-xs text-gray-500">{item.desc}</span>
+                                            </div>
                                         </div>
-                                        <span className="font-bold text-white">{item}</span>
-                                    </div>
-                                    <div className={cn(
-                                        "w-14 h-8 rounded-full p-1 cursor-pointer transition-colors",
-                                        i < 3 ? "bg-vibe-purple" : "bg-white/10"
-                                    )}>
                                         <div className={cn(
-                                            "w-6 h-6 bg-white rounded-full shadow-lg transition-transform",
-                                            i < 3 ? "translate-x-6" : "translate-x-0"
-                                        )} />
+                                            "w-14 h-8 rounded-full p-1 cursor-pointer transition-colors",
+                                            item.active ? "bg-vibe-purple" : "bg-white/10"
+                                        )}>
+                                            <div className={cn(
+                                                "w-6 h-6 bg-white rounded-full shadow-lg transition-transform",
+                                                item.active ? "translate-x-6" : "translate-x-0"
+                                            )} />
+                                        </div>
                                     </div>
                                 </div>
                             ))}

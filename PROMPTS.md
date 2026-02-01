@@ -45,6 +45,8 @@ This document outlines the strategic AI-agentic orchestration used by **Team Bug
 
 ---
 
+---
+
 ## 🛠️ Phase 6: Production Hardening & Build Optimization
 **Objective:** Ensure sub-second TTI and flawless build reproducibility.
 
@@ -53,5 +55,21 @@ This document outlines the strategic AI-agentic orchestration used by **Team Bug
 
 ---
 
-### *Refinement Philosophy:*
+## 🧬 Advanced Iterative Refinement (The Antigravity Loop)
+Beyond initial generation, we used a **Feedback-Loop Prompting** strategy to polish micro-details:
+
+| Feature Area | The "Refinement" Prompt | The Result |
+| :--- | :--- | :--- |
+| **Glass Material** | "Add a shifting noise overlay to the `noise-overlay` class. It should feel like high-end Frosted Glass, not just a blur." | Physicality & Texture |
+| **Map Kinetics** | "Each building node should not just glow; it should pulse with a `cubic-bezier` timing that mimics a heartbeat." | Dynamic Empathy |
+| **Bento Logic** | "Stagger the entrance of the Dashboard cards by `0.1s` each to create a sense of the app 'unfolding' in front of the user." | Premium Experience |
+
+---
+
+### *Refinement Philosophy: "Semantic Sculpting"*
 Our approach centered on **Semantic Sculpting**. We didn't just ask for "a chat app"; we described the **materiality** (glass, blur, grain), the **kinetics** (unfolding, staggering, pulsating), and the **emotional vibe** (midnight space, high-energy neon) of the experience.
+
+---
+<div align="center">
+  <p><i>VibeSRM: Engineered through Precision Prompting.</i></p>
+</div>

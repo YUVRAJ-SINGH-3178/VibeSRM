@@ -58,6 +58,19 @@ VibeSRM isn't just an app; it's an **atmosphere**. We've ditched generic AI layo
 
 ---
 
+## 🏛️ Jury Evaluation Hub
+*Quick access for the Vibecraft Judging Committee*
+
+| Requirement | Reference / Link |
+| :--- | :--- |
+| **System Architecture (30%)** | [Read ARCHITECTURE.md](./ARCHITECTURE.md) |
+| **Code Quality (30%)** | [Browse GitHub Repository](https://github.com/YUVRAJ-SINGH-3178/VibeSRM) |
+| **Prompt Engineering (10%)** | [View PROMPTS.md](./PROMPTS.md) |
+| **Local Run (10%)** | [Build Reproducibility Guide](#-build-reproducibility-mandatory) |
+| **Project APK / Link** | [Live Demo Portfolio](https://github.com/YUVRAJ-SINGH-3178/VibeSRM) |
+
+---
+
 ## 🏗️ Architecture Diagram
 ```mermaid
 graph TD
