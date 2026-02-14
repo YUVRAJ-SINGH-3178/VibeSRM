@@ -7,15 +7,26 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        display: ['Space Grotesk', 'sans-serif'],
+        sans: ['"Inter"', 'sans-serif'],
+        display: ['var(--font-heading)', 'sans-serif'],
+      },
+      borderRadius: {
+        '3xl': 'var(--radius-lg)',
+        '2xl': 'var(--radius-md)',
+        'xl': 'calc(var(--radius-md) - 4px)',
       },
       colors: {
+        background: 'var(--bg-page)',
+        card: 'var(--bg-card)',
+        'card-hover': 'var(--bg-card-hover)',
+        foreground: 'var(--text-primary)',
+        'foreground-muted': 'var(--text-secondary)',
+        border: 'var(--border-color)',
         vibe: {
           dark: '#050507',
           card: '#0F0F16',
-          purple: '#7C3AED',
-          cyan: '#06B6D4',
+          purple: 'var(--accent-primary)',
+          cyan: 'var(--accent-secondary)',
           rose: '#F43F5E',
         }
       },

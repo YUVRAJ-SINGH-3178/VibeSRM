@@ -1,34 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageSquare,
     Plus,
     Search,
     Users,
     Settings,
-    Phone,
-    Video,
     MoreVertical,
     Paperclip,
     X,
-    Mic,
     Send,
-    LogIn
+    LogIn,
+    ArrowLeft,
+    Hash,
+    Image,
+    AtSign,
+    LogOut
 } from 'lucide-react';
 import { cn, DEFAULT_CHAT_CHANNELS } from '../utils/constants';
 import { chat } from '../utils/database';
+import { ThemeSkeleton } from './ThemeSkeleton';
 
 export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channels, addNotification, addNotificationItem, onLeaveChannel }) => {
     const [messages, setMessages] = useState([]);
     const [toggledMsgId, setToggledMsgId] = useState(null);
     const [inputText, setInputText] = useState('');
     const [loading, setLoading] = useState(true);
+    const [isMobileListVisible, setIsMobileListVisible] = useState(true);
+
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const inputRef = useRef(null);
 
     const channelList = channels?.length ? channels : DEFAULT_CHAT_CHANNELS;
-    const activeChannelLabel = channelList.find((ch) => ch.id === activeChannel)?.label || activeChannel;
+    const activeChannelObj = channelList.find((ch) => ch.id === activeChannel);
+    const activeChannelLabel = activeChannelObj?.label || activeChannel;
     const isCustom = activeChannel?.startsWith('dm-') || activeChannel?.startsWith('event-');
 
     // Audio refs
@@ -39,6 +45,12 @@ export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channel
         sendSound.current.volume = 0.4;
         receiveSound.current.volume = 0.4;
     }, []);
+
+    useEffect(() => {
+        if (activeChannel && window.innerWidth < 768) {
+            setIsMobileListVisible(false);
+        }
+    }, [activeChannel]);
 
     const scrollToBottom = (instant = false) => {
         if (messagesContainerRef.current) {
@@ -69,6 +81,16 @@ export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channel
                 subscription = chat.subscribeToMessages(activeChannel, (message) => {
                     setMessages((prev) => {
                         if (prev.some(m => m.id === message.id)) return prev;
+                        // Replace optimistic temp message from current user with real server message
+                        const tempIdx = prev.findIndex(
+                            m => typeof m.id === 'string' && m.id.startsWith('temp-') &&
+                                m.sender_id === message.sender_id && m.text === message.text
+                        );
+                        if (tempIdx !== -1) {
+                            const updated = [...prev];
+                            updated[tempIdx] = message;
+                            return updated;
+                        }
                         if (message.sender_id !== currentUser?.id) {
                             receiveSound.current.currentTime = 0;
                             receiveSound.current.play().catch(() => { });
@@ -82,7 +104,7 @@ export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channel
                 setLoading(false);
             }
         };
-        if (currentUser) initChat();
+        if (currentUser && activeChannel) initChat();
         return () => { if (subscription?.unsubscribe) subscription.unsubscribe(); };
     }, [activeChannel, currentUser]);
 
@@ -115,202 +137,227 @@ export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channel
     };
 
     if (!currentUser) return (
-        <div className="h-[600px] flex items-center justify-center relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030014]">
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-150"></div>
-            <div className="z-10 text-center p-12 bg-black/40 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.5)]">
+        <div className="h-full flex items-center justify-center p-8">
+            <div className="text-center p-12 obsidian-card rounded-3xl max-w-md bg-[var(--bg-card)]/80">
+                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-tr from-vibe-purple to-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.5)]">
                     <LogIn className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-3xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 mb-2">Connect to Vibe</h3>
-                <p className="text-gray-400">Sign in to unlock the campus network.</p>
+                <h3 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Connect to Vibe</h3>
+                <p className="text-[var(--text-secondary)]">Sign in to unlock the campus network.</p>
             </div>
         </div>
     );
 
     return (
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-[calc(100vh-140px)] min-h-[600px] flex gap-6 font-sans">
+        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-[88vh] flex gap-6 font-sans overflow-hidden pb-6 lg:pb-0 px-4 md:px-0">
 
-            <div className="w-80 hidden md:flex flex-col rounded-[2.5rem] bg-[#0b0b15]/60 backdrop-blur-xl border border-white/[0.08] shadow-2xl overflow-hidden relative group">
-                <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+            {/* CHANNEL LIST */}
+            <div className={cn(
+                "w-full md:w-80 flex-col rounded-[2.5rem] obsidian-card overflow-hidden relative group transition-all duration-300 border-none bg-[var(--surface-glass)] backdrop-blur-3xl",
+                !isMobileListVisible ? "hidden md:flex" : "flex"
+            )}>
 
-                <div className="p-6 pb-2 relative z-10">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-2xl font-display font-bold text-white tracking-tight flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                                <MessageSquare className="w-5 h-5 text-white" />
-                            </div>
-                            Chat
+                <div className="p-6 pb-4 relative z-10 border-b border-[var(--border-color)]">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-lg bg-vibe-purple/20 border border-vibe-purple/40 flex items-center justify-center">
+                                <MessageSquare className="w-4 h-4 text-vibe-purple" />
+                            </span>
+                            Channels
                         </h2>
-                        <button className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition text-gray-400 hover:text-white">
-                            <Plus className="w-5 h-5" />
+                        <button className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 transition flex items-center justify-center text-gray-400 hover:text-white border border-white/5">
+                            <Plus className="w-4 h-4" />
                         </button>
                     </div>
+
                     <div className="relative group/search">
-                        <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500 group-focus-within/search:text-violet-400 transition-colors" />
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-[var(--text-secondary)] group-focus-within/search:text-vibe-purple transition-colors" />
                         <input
-                            placeholder="Filter channels..."
-                            className="w-full bg-[#151520] border border-white/5 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-violet-500/50 focus:bg-[#1a1a25] transition-all"
+                            placeholder="Find or start a conversation..."
+                            className="w-full bg-[var(--bg-card-hover)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-xs font-medium text-[var(--text-primary)] placeholder-[var(--text-secondary)] outline-none focus:border-vibe-purple/50 transition-all font-mono"
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 custom-scrollbar relative z-10">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-4 py-2 mt-2">vibe channels</p>
+                <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar relative z-10">
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 py-2">Suggested</p>
                     {channelList.map((channel) => {
                         const isActive = activeChannel === channel.id;
                         const isPrivate = channel.id?.startsWith('dm-');
+                        const isCustomSidebar = channel.id?.startsWith('dm-') || channel.id?.startsWith('event-');
 
                         return (
-                            <motion.div
+                            <motion.button
                                 key={channel.id}
-                                onClick={() => setActiveChannel(channel.id)}
-                                whileHover={{ scale: 1.02 }}
+                                onClick={() => {
+                                    setActiveChannel(channel.id);
+                                    setIsMobileListVisible(false);
+                                }}
+                                whileHover={{ x: 4 }}
                                 whileTap={{ scale: 0.98 }}
                                 className={cn(
-                                    "relative px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 flex items-center gap-3 group overflow-hidden",
+                                    "w-full relative px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-3 group text-left",
                                     isActive
-                                        ? "bg-gradient-to-br from-violet-600/90 to-indigo-700/90 text-white shadow-[0_8px_20px_-5px_rgba(124,58,237,0.4)]"
-                                        : "hover:bg-white/[0.05] text-gray-400 hover:text-gray-200"
+                                        ? "bg-[var(--bg-card-hover)] text-[var(--text-primary)] shadow-lg border border-[var(--border-color)]"
+                                        : "hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent"
                                 )}
                             >
-                                {isActive && (
-                                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                                )}
-
                                 <div className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold backdrop-blur-sm transition-all border",
+                                    "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all",
                                     isActive
-                                        ? "bg-white/20 text-white border-white/30"
-                                        : "bg-[#1a1a22] text-gray-500 border-white/5 group-hover:bg-[#252530] group-hover:text-gray-300"
+                                        ? "bg-vibe-cyan text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                                        : "bg-[var(--surface-highlight)] text-[var(--text-secondary)] group-hover:bg-[var(--bg-card-hover)] group-hover:text-[var(--text-primary)]"
                                 )}>
-                                    {isPrivate ? <Users className="w-4 h-4" /> : '#'}
+                                    {isPrivate ? <Users className="w-3.5 h-3.5" /> : <Hash className="w-3.5 h-3.5" />}
                                 </div>
 
-                                <div className="flex-1 min-w-0 relative z-10">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <span className={cn("font-bold truncate text-[15px]", isActive ? "text-white" : "text-gray-300")}>{channel.label}</span>
-                                        {isActive && <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse" />}
-                                    </div>
-                                    <div className={cn("text-xs truncate", isActive ? "text-indigo-100" : "text-gray-600")}>
-                                        {isActive ? "Active Now" : "Click to join"}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center pr-1">
+                                        <span className={cn("font-bold truncate text-sm", isActive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]")}>{channel.label}</span>
+                                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-vibe-cyan animate-pulse" />}
+                                        {isCustomSidebar && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onLeaveChannel?.(channel.id); }}
+                                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+                                                title="Leave Chat"
+                                            >
+                                                <LogOut className="w-3 h-3" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
-                            </motion.div>
+                            </motion.button>
                         );
                     })}
                 </div>
 
-                <div className="p-4 relative z-10 bg-black/20 border-t border-white/5 backdrop-blur-xl">
-                    <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition border border-transparent hover:border-white/5 group bg-[#0f0f15]">
-                        <div className="relative">
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-full opacity-0 group-hover:opacity-100 transition duration-500 blur-sm"></div>
-                            <img src={currentUser.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} className="relative w-10 h-10 rounded-full object-cover bg-black" alt="me" />
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-bold text-white truncate">{currentUser.username}</p>
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                <p className="text-[10px] text-emerald-500 font-medium">Online</p>
-                            </div>
-                        </div>
-                        <Settings className="w-4 h-4 text-gray-500 hover:text-white transition cursor-pointer" />
+                {/* User Footer */}
+                <div className="p-3 bg-[var(--surface-glass-high)] backdrop-blur-md border-t border-[var(--border-color)] mx-3 mb-3 rounded-2xl flex items-center gap-3">
+                    <div className="relative">
+                        <div className="w-2 h-2 absolute bottom-0 right-0 bg-emerald-500 rounded-full border-2 border-black z-10" />
+                        <img src={currentUser.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser.username}`} className="w-8 h-8 rounded-full bg-gray-800" alt="me" />
                     </div>
+                    <div className="flex-1 overflow-hidden">
+                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">{currentUser.username}</p>
+                        <p className="text-[10px] text-emerald-500 font-mono truncate">Online</p>
+                    </div>
+                    <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition">
+                        <Settings className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col rounded-[2.5rem] bg-[#05050A] relative overflow-hidden shadow-2xl border border-white/10 group">
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none mix-blend-screen" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-fuchsia-600/5 blur-[120px] rounded-full pointer-events-none mix-blend-screen" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
+            {/* CHAT WINDOW */}
+            <div className={cn(
+                "flex-1 flex-col rounded-[2.5rem] obsidian-card relative overflow-hidden transition-all duration-300 border border-[var(--border-color)] bg-[var(--surface-glass)]",
+                !isMobileListVisible ? "flex" : "hidden md:flex"
+            )}>
+                {/* Top Bar */}
+                <div className="absolute top-0 left-0 right-0 z-30 p-4">
+                    <div className="px-5 py-3 bg-[var(--surface-glass-high)]/90 backdrop-blur-xl border border-[var(--border-color)] rounded-2xl flex justify-between items-center shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setIsMobileListVisible(true)} className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition">
+                                <ArrowLeft className="w-4 h-4" />
+                            </button>
 
-                <div className="absolute top-6 left-6 right-6 z-30">
-                    <div className="px-6 py-4 bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-3xl flex justify-between items-center shadow-lg">
-                        <div className="flex items-center gap-4">
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gray-800 to-black border border-white/10 flex items-center justify-center shadow-inner">
-                                <span className="text-xl">{isCustom ? '💬' : '#'}</span>
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <div className="flex flex-col">
+                                <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                                    <span className="text-vibe-cyan text-lg select-none">{isCustom ? '@' : '#'}</span>
                                     {activeChannelLabel}
                                 </h2>
-                                <p className="text-xs text-gray-400 flex items-center gap-2">
-                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]" />
-                                    {messages.length} messages
+                                <p className="text-[10px] text-[var(--text-secondary)] font-medium font-mono uppercase tracking-wide">
+                                    {messages.length} Messages • Encrypted
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 bg-black/20 p-1 rounded-2xl border border-white/5">
-                            {[Phone, Video, MoreVertical].map((Icon, i) => (
-                                <button key={i} className="p-2.5 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition">
-                                    <Icon className="w-4.5 h-4.5" />
+                        <div className="flex items-center gap-1">
+                            <button className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition" title="Search">
+                                <Search className="w-4 h-4" />
+                            </button>
+                            <div className="w-px h-4 bg-white/10 mx-1" />
+                            {isCustom && (
+                                <button
+                                    onClick={() => onLeaveChannel?.(activeChannel)}
+                                    className="p-2 rounded-xl hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition"
+                                    title="Leave Chat"
+                                >
+                                    <LogOut className="w-4 h-4" />
                                 </button>
-                            ))}
+                            )}
+                            <button className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition" title="More">
+                                <MoreVertical className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 pt-32 pb-28 space-y-6 custom-scrollbar relative z-10" onClick={() => setToggledMsgId(null)}>
+                {/* Messages Area */}
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 md:px-8 pt-24 pb-28 space-y-4 custom-scrollbar relative z-10 scroll-smooth" onClick={() => setToggledMsgId(null)}>
                     {loading ? (
-                        <div className="h-full flex items-center justify-center">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-12 h-12 rounded-full border-4 border-violet-500/30 border-t-violet-500 animate-spin"></div>
-                                <p className="text-gray-500 text-sm font-medium animate-pulse">Syncing frequencies...</p>
-                            </div>
-                        </div>
+                        <ThemeSkeleton />
                     ) : messages.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-center">
-                            <div className="max-w-xs p-8 rounded-[3rem] bg-white/[0.02] border border-white/5 backdrop-blur-md">
-                                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-full flex items-center justify-center shadow-inner">
-                                    <MessageSquare className="w-8 h-8 text-gray-600" />
+                        <div className="h-full flex items-center justify-center text-center px-4">
+                            <div className="flex flex-col items-center gap-4 opacity-50">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-vibe-purple/20 to-vibe-cyan/20 flex items-center justify-center blur-xl absolute" />
+                                <MessageSquare className="w-12 h-12 text-gray-600 relative z-10" />
+                                <div className="relative z-10">
+                                    <h3 className="text-lg font-bold text-gray-300">Quiet Channel</h3>
+                                    <p className="text-gray-600 text-sm">Be the first to vibe here.</p>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">It's quiet... too quiet</h3>
-                                <p className="text-gray-500">Kickstart the vibe in #{activeChannelLabel}!</p>
                             </div>
                         </div>
                     ) : (
                         messages.map((msg, idx) => {
                             const isMe = msg.sender_id === currentUser.id;
                             const showAvatar = idx === 0 || messages[idx - 1].sender_id !== msg.sender_id;
+                            const nextIsSame = messages[idx + 1]?.sender_id === msg.sender_id;
 
                             return (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    transition={{ duration: 0.2 }}
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.15 }}
                                     key={msg.id}
-                                    className={cn("flex group/msg", isMe ? "justify-end" : "justify-start")}
+                                    className={cn("flex group/msg", isMe ? "justify-end" : "justify-start", nextIsSame ? "mb-0.5" : "mb-4")}
                                 >
-                                    <div className={cn("flex max-w-[75%] gap-3", isMe ? "flex-row-reverse" : "flex-row")}>
-                                        <div className="w-9 flex-shrink-0 flex flex-col justify-end">
+                                    <div className={cn("flex max-w-[85%] md:max-w-[65%] gap-3 relative", isMe ? "flex-row-reverse" : "flex-row")}>
+
+                                        {/* Avatar Column */}
+                                        <div className="w-8 flex-shrink-0 flex flex-col justify-end">
                                             {showAvatar && !isMe ? (
-                                                <img src={msg.sender?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${msg.sender?.username}`} className="w-9 h-9 rounded-2xl object-cover bg-black border border-white/10 shadow-lg" alt="Use" />
-                                            ) : <div className="w-9" />}
+                                                <img src={msg.sender?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${msg.sender?.username}`} className="w-8 h-8 rounded-lg object-cover bg-black/50 border border-white/5" alt="Use" />
+                                            ) : <div className="w-8" />}
                                         </div>
 
-                                        <div className={cn("flex flex-col gap-1", isMe ? "items-end" : "items-start")}>
-                                            {showAvatar && !isMe && <span className="ml-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider">{msg.sender?.username}</span>}
+                                        <div className={cn("flex flex-col gap-1 min-w-0", isMe ? "items-end" : "items-start")}>
+                                            {showAvatar && !isMe && <span className="ml-1 text-[10px] font-bold text-gray-500">{msg.sender?.username}</span>}
 
                                             <div
                                                 onClick={(e) => { e.stopPropagation(); setToggledMsgId(prev => prev === msg.id ? null : msg.id); }}
                                                 className={cn(
-                                                    "relative px-5 py-3.5 text-[15px] leading-relaxed cursor-pointer transition-all duration-200 hover:scale-[1.01] hover:shadow-lg",
+                                                    "relative px-4 py-2.5 text-[14px] leading-relaxed cursor-pointer transition-all duration-200 break-words shadow-sm border",
                                                     isMe
-                                                        ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-indigo-700 text-white rounded-[24px] rounded-tr-md shadow-[0_4px_15px_rgba(79,70,229,0.3)] border border-indigo-400/20"
-                                                        : "bg-[#181820]/90 backdrop-blur-xl text-gray-100 rounded-[24px] rounded-tl-md border border-white/10 shadow-sm"
+                                                        ? "bg-vibe-purple text-white border-vibe-purple/50 rounded-[18px] rounded-br-sm"
+                                                        : "bg-[var(--bg-card-hover)] text-[var(--text-primary)] border-[var(--border-color)] rounded-[18px] rounded-bl-sm hover:brightness-95"
                                                 )}
                                             >
                                                 {msg.text}
 
+                                                {/* Context Menu */}
                                                 {toggledMsgId === msg.id && (
-                                                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={cn("absolute -top-12 flex bg-[#1a1a24] border border-white/10 p-1.5 rounded-xl shadow-2xl z-50", isMe ? "right-0" : "left-0")}>
-                                                        <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.text); setToggledMsgId(null); }} className="hover:bg-white/10 p-2 rounded-lg text-white" title="Copy"><Paperclip className="w-3.5 h-3.5" /></button>
-                                                        {isMe && <button onClick={(e) => { e.stopPropagation(); const msgId = msg.id; setMessages(p => p.filter(m => m.id !== msgId)); setToggledMsgId(null); chat.deleteMessage(msgId).catch(() => { addNotification?.('Failed to delete message', 'error'); }); }} className="hover:bg-red-500/20 text-red-400 p-2 rounded-lg ml-1" title="Delete"><X className="w-3.5 h-3.5" /></button>}
+                                                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={cn("absolute -top-10 flex bg-[#0a0a0f] border border-white/10 p-1 rounded-lg shadow-xl z-50", isMe ? "right-0" : "left-0")}>
+                                                        <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(msg.text); setToggledMsgId(null); }} className="hover:bg-white/10 p-1.5 rounded-md text-gray-400 hover:text-white" title="Copy"><Paperclip className="w-3.5 h-3.5" /></button>
+                                                        {isMe && <button onClick={(e) => { e.stopPropagation(); const msgId = msg.id; setMessages(p => p.filter(m => m.id !== msgId)); setToggledMsgId(null); chat.deleteMessage(msgId).catch(() => { addNotification?.('Failed to delete message', 'error'); }); }} className="hover:bg-red-900/30 text-red-400 p-1.5 rounded-md ml-1" title="Delete"><X className="w-3.5 h-3.5" /></button>}
                                                     </motion.div>
                                                 )}
                                             </div>
-                                            <span className={cn("text-[10px] font-medium opacity-0 group-hover/msg:opacity-100 transition-opacity", isMe ? "text-indigo-300/60 mr-2" : "text-gray-600 ml-2")}>
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+
+                                            {/* Timestamp */}
+                                            {!nextIsSame && (
+                                                <span className={cn("text-[9px] font-mono opacity-50", isMe ? "mr-1 text-vibe-purple" : "ml-1 text-gray-600")}>
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </motion.div>
@@ -320,40 +367,43 @@ export const ChatView = ({ currentUser, activeChannel, setActiveChannel, channel
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="absolute bottom-6 left-6 right-6 z-30">
+                {/* Input Bar */}
+                <div className="absolute bottom-6 left-4 right-4 md:left-24 md:right-24 z-30">
                     <form onSubmit={handleSend} className="relative group/input">
-                        <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-[2rem] opacity-0 group-focus-within/input:opacity-20 blur-xl transition-opacity duration-500"></div>
                         <div className={cn(
-                            "relative flex items-end gap-3 bg-[#0c0c12]/80 backdrop-blur-2xl p-2.5 pl-5 rounded-[2rem] border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all duration-300",
-                            inputText.trim() ? "border-violet-500/40" : "border-white/10"
+                            "relative flex items-end gap-2 bg-[var(--surface-glass-high)]/90 backdrop-blur-3xl p-1.5 pl-4 rounded-[1.5rem] border transition-all duration-300 shadow-2xl obsidian-card",
+                            inputText.trim() ? "border-vibe-purple/50 ring-1 ring-vibe-purple/20" : "border-[var(--border-color)]"
                         )}>
-                            <button type="button" className="pb-3 text-gray-400 hover:text-white transition"><Plus className="w-6 h-6" /></button>
+                            <button type="button" className="pb-2.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"><Plus className="w-5 h-5" /></button>
 
-                            <div className="flex-1 py-3">
+                            <div className="flex-1 py-2.5">
                                 <input
                                     ref={inputRef}
                                     value={inputText}
                                     onChange={e => setInputText(e.target.value)}
-                                    placeholder={`Message #${activeChannelLabel}...`}
-                                    className="w-full bg-transparent border-none outline-none text-white placeholder-gray-500 text-[16px] font-medium"
+                                    placeholder={`Message ${activeChannelLabel}...`}
+                                    className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm font-medium"
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 pr-1 pb-1">
+                            <div className="flex items-center gap-1 pr-1 pb-1">
                                 {!inputText.trim() && (
-                                    <button type="button" className="p-2.5 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition"><Mic className="w-5 h-5" /></button>
+                                    <>
+                                        <button type="button" className="p-2 rounded-full hover:bg-white/5 text-gray-500 hover:text-white transition"><Image className="w-4 h-4" /></button>
+                                        <button type="button" className="p-2 rounded-full hover:bg-white/5 text-gray-500 hover:text-white transition"><AtSign className="w-4 h-4" /></button>
+                                    </>
                                 )}
                                 <button
                                     type="submit"
                                     disabled={!inputText.trim()}
                                     className={cn(
-                                        "p-3 rounded-full transition-all duration-300 flex items-center justify-center",
+                                        "p-2 rounded-full transition-all duration-300 flex items-center justify-center",
                                         inputText.trim()
-                                            ? "bg-gradient-to-tr from-violet-600 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-600/30 rotate-0 scale-100"
-                                            : "bg-white/5 text-gray-600 -rotate-90 scale-90 opacity-0 w-0 p-0 overflow-hidden"
+                                            ? "bg-vibe-purple text-white shadow-lg rotate-0 scale-100"
+                                            : "bg-white/5 text-gray-600 -rotate-90 scale-75 opacity-0 w-0 p-0 overflow-hidden"
                                     )}
                                 >
-                                    <Send className="w-5 h-5 ml-0.5" />
+                                    <Send className="w-4 h-4 ml-0.5" />
                                 </button>
                             </div>
                         </div>

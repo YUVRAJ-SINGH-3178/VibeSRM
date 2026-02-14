@@ -6,11 +6,12 @@ export function cn(...inputs) {
 }
 
 export const INITIAL_LOCATIONS = [
-    { id: '1', name: 'Library', type: 'library', occupancy: 78, capacity: 500, desc: 'Quiet Zone • Level 3', coords: { x: 650, y: 450 }, color: 'text-vibe-cyan', icon: '📚', wifiSpeed: 85, crowdLevel: 'High', amenities: ['Silent Zone', 'AC', 'Power Outlets', 'Printers'], currentPeople: 390 },
-    { id: '2', name: 'Sports Area', type: 'sports', occupancy: 42, capacity: 300, desc: 'Football • Badminton • Track', coords: { x: 950, y: 250 }, color: 'text-orange-400', icon: '⚽', wifiSpeed: 40, crowdLevel: 'Medium', amenities: ['Football Ground', 'Badminton Courts', 'Running Track', 'Equipment Rental'], currentPeople: 126 },
-    { id: '3', name: 'Ganga Gym', type: 'gym', occupancy: 35, capacity: 200, desc: 'Fitness Center • 24/7', coords: { x: 900, y: 620 }, color: 'text-vibe-rose', icon: '💪', wifiSpeed: 50, crowdLevel: 'Low', amenities: ['Cardio', 'Weights', 'Lockers', 'Showers'], currentPeople: 70 },
-    { id: '4', name: 'Flag Park', type: 'park', occupancy: 25, capacity: 500, desc: 'Central Gathering Area', coords: { x: 250, y: 650 }, color: 'text-emerald-400', icon: '🏳️', wifiSpeed: 30, crowdLevel: 'Low', amenities: ['Open Space', 'Benches', 'Shade Trees', 'Walking Path'], currentPeople: 125 },
-    { id: '5', name: 'Academic Block', type: 'study', occupancy: 65, capacity: 800, desc: 'Main Academic Building', coords: { x: 250, y: 320 }, color: 'text-vibe-purple', icon: '🎓', wifiSpeed: 100, crowdLevel: 'High', amenities: ['Lecture Halls', 'Labs', 'AC', 'Elevators'], currentPeople: 520 },
+    { id: '1', name: 'Admin Block', type: 'library', occupancy: 78, capacity: 500, desc: 'Main Administration', coords: { x: 500, y: 500 }, color: 'text-vibe-cyan', icon: '🏛️', wifiSpeed: 95, crowdLevel: 'Medium', amenities: ['Admission Office', 'Registrar', 'Auditorium'], currentPeople: 150, photoUrl: 'https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&q=80&w=1000' },
+    { id: '2', name: 'Academic Block', type: 'study', occupancy: 65, capacity: 1200, desc: 'Classrooms & Labs', coords: { x: 300, y: 400 }, color: 'text-vibe-purple', icon: '🎓', wifiSpeed: 100, crowdLevel: 'High', amenities: ['Lecture Halls', 'Labs', 'Library'], currentPeople: 850, photoUrl: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=1000' },
+    { id: '3', name: 'Ganga Hostel', type: 'hostel', occupancy: 45, capacity: 600, desc: 'Girls Hostel', coords: { x: 800, y: 300 }, color: 'text-vibe-rose', icon: '🏢', wifiSpeed: 60, crowdLevel: 'Low', amenities: ['Mess', 'Common Room', 'Gym'], currentPeople: 220, photoUrl: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=1000' },
+    { id: '4', name: 'Kaveri Hostel', type: 'hostel', occupancy: 55, capacity: 800, desc: 'Boys Hostel', coords: { x: 800, y: 700 }, color: 'text-emerald-400', icon: '🏢', wifiSpeed: 60, crowdLevel: 'Medium', amenities: ['Mess', 'Badminton Court', 'Store'], currentPeople: 400, photoUrl: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=1000' },
+    { id: '5', name: 'Sports Complex', type: 'sports', occupancy: 30, capacity: 400, desc: 'Grounds & Courts', coords: { x: 200, y: 800 }, color: 'text-orange-400', icon: '⚽', wifiSpeed: 40, crowdLevel: 'Low', amenities: ['Cricket Ground', 'Basketball', 'Tennis'], currentPeople: 85, photoUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=1000' },
+    { id: '6', name: 'Dining Hall', type: 'food', occupancy: 90, capacity: 500, desc: 'Central Mess', coords: { x: 600, y: 750 }, color: 'text-yellow-400', icon: '🍔', wifiSpeed: 50, crowdLevel: 'High', amenities: ['Vegetarian', 'Non-Veg', 'Bakery'], currentPeople: 450, photoUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1000' },
 ];
 
 
@@ -71,19 +72,21 @@ export const INTEREST_OPTIONS = ['Studying', 'Sports', 'Gym', 'Badminton', 'Gami
 
 
 export const BUILDING_IMAGES = {
-    'Library': 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
-    'Sports Area': 'https://cdn-icons-png.flaticon.com/512/857/857418.png',
-    'Ganga Gym': 'https://cdn-icons-png.flaticon.com/512/2936/2936886.png',
-    'Flag Park': 'https://cdn-icons-png.flaticon.com/512/3310/3310331.png',
+    'Admin Block': 'https://cdn-icons-png.flaticon.com/512/2232/2232688.png',
+    'Sports Complex': 'https://cdn-icons-png.flaticon.com/512/857/857418.png',
+    'Ganga Hostel': 'https://cdn-icons-png.flaticon.com/512/2936/2936886.png',
+    'Kaveri Hostel': 'https://cdn-icons-png.flaticon.com/512/3310/3310331.png',
     'Academic Block': 'https://cdn-icons-png.flaticon.com/512/2602/2602414.png',
+    'Dining Hall': 'https://cdn-icons-png.flaticon.com/512/1046/1046774.png'
 };
 
 export const BUILDING_COLORS = {
-    'Library': { primary: '#22d3ee', secondary: '#06b6d4', glow: 'rgba(34,211,238,0.4)' },
-    'Sports Area': { primary: '#f97316', secondary: '#ea580c', glow: 'rgba(249,115,22,0.4)' },
-    'Ganga Gym': { primary: '#fb7185', secondary: '#f43f5e', glow: 'rgba(251,113,133,0.4)' },
-    'Flag Park': { primary: '#10b981', secondary: '#059669', glow: 'rgba(16,185,129,0.4)' },
+    'Admin Block': { primary: '#22d3ee', secondary: '#06b6d4', glow: 'rgba(34,211,238,0.4)' },
+    'Sports Complex': { primary: '#f97316', secondary: '#ea580c', glow: 'rgba(249,115,22,0.4)' },
+    'Ganga Hostel': { primary: '#fb7185', secondary: '#f43f5e', glow: 'rgba(251,113,133,0.4)' },
+    'Kaveri Hostel': { primary: '#10b981', secondary: '#059669', glow: 'rgba(16,185,129,0.4)' },
     'Academic Block': { primary: '#a855f7', secondary: '#7c3aed', glow: 'rgba(168,85,247,0.4)' },
+    'Dining Hall': { primary: '#eab308', secondary: '#ca8a04', glow: 'rgba(234,179,8,0.4)' },
 };
 
 export const CARD_STYLE = "relative overflow-hidden glass-card glass-card-hover rounded-[2rem] group shimmer";

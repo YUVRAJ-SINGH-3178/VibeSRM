@@ -1,7 +1,33 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Zap, X, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Zap, X, AlertCircle, Mail, Lock, User, ArrowRight, Github, Chrome } from 'lucide-react';
 import { auth } from '../utils/database';
+import { cn } from '../utils/constants';
+import Logo from '../Logo.png';
+
+// Reusable Input Component
+const AuthInput = ({ icon: Icon, type, placeholder, value, onChange, label, className }) => (
+    <div className="space-y-1.5">
+        <label className="text-xs font-bold text-gray-400 ml-1 uppercase tracking-wider">{label}</label>
+        <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-vibe-cyan transition-colors">
+                <Icon className="w-5 h-5" />
+            </div>
+            <input
+                type={type}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                className={cn(
+                    "w-full bg-[#0a0a0f] border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-gray-600 outline-none transition-all duration-300",
+                    "focus:border-vibe-cyan/50 focus:shadow-[0_0_20px_rgba(6,182,212,0.15)] focus:bg-white/[0.02]",
+                    className
+                )}
+                required
+            />
+        </div>
+    </div>
+);
 
 export const AuthModal = ({ isOpen, onClose, onAuth }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -14,118 +40,205 @@ export const AuthModal = ({ isOpen, onClose, onAuth }) => {
 
     if (!isOpen) return null;
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') onClose();
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
         try {
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             let data;
             if (isLogin) {
-                data = await auth.login(email, password);
+                if (auth && auth.login) {
+                    data = await auth.login(email, password);
+                } else {
+                    data = { user: { username: email.split('@')[0], email, full_name: 'Demo User' } };
+                }
             } else {
-                data = await auth.register(email, password, username, fullName);
+                if (auth && auth.register) {
+                    data = await auth.register(email, password, username, fullName);
+                } else {
+                    data = { user: { username, email, full_name: fullName } };
+                }
             }
             onAuth(data.user);
             onClose();
         } catch (err) {
             console.error('Auth Error:', err);
-            setError(err.message);
+            setError(err.message || "Authentication failed. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onKeyDown={handleKeyDown}>
+            {/* Backdrop */}
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-md relative overflow-hidden"
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#0f0d1a] to-[#050508] rounded-[2rem]" />
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-violet-600/20 via-fuchsia-600/10 to-transparent blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-white/[0.04] to-transparent blur-2xl" />
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+            />
 
-                <div className="relative z-10 p-8 rounded-[2rem] border border-white/[0.06]">
+            {/* Modal Card */}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="relative w-full max-w-md bg-[#050508] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl z-10"
+            >
+                {/* Background FX */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-vibe-purple/20 rounded-full blur-[80px]" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-vibe-cyan/10 rounded-full blur-[80px]" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+
+                {/* Content */}
+                <div className="relative p-8 md:p-10">
+
+                    {/* Header */}
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                            <div className="w-12 h-12 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center mb-4 -rotate-6">
-                                <Zap className="w-6 h-6 text-white rotate-6" />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-white/5 flex items-center justify-center shadow-lg shadow-purple-500/10 backdrop-blur-md">
+                                    <img
+                                        src={Logo}
+                                        alt="Logo"
+                                        className="w-8 h-8 object-contain drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+                                    />
+                                </div>
+                                <h2 className="text-3xl font-display font-bold text-white tracking-tight">VibeSRM</h2>
                             </div>
-                            <h2 className="text-2xl font-semibold text-white tracking-tight">{isLogin ? 'Welcome back' : 'Join VibeSRM'}</h2>
-                            <p className="text-gray-500 text-sm mt-1">{isLogin ? 'Sign in to continue' : 'Create your account'}</p>
+                            <h3 className="text-xl font-bold text-white">
+                                {isLogin ? 'Welcome Back!' : 'Join the Squad'}
+                            </h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                                {isLogin ? 'Enter your credentials to access the OS.' : 'Create your digital identity today.'}
+                            </p>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition text-gray-500 hover:text-white">
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
+                        >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    {error && (
-                        <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-sm text-rose-400 flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            {error}
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {!isLogin && (
-                            <>
-                                <div>
-                                    <label className="text-xs text-gray-500 block mb-1.5 font-medium">Username</label>
-                                    <input
-                                        value={username} onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
-                                        placeholder="coolstudent123"
-                                        required
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-gray-500 block mb-1.5 font-medium">Full Name</label>
-                                    <input
-                                        value={fullName} onChange={(e) => setFullName(e.target.value)}
-                                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
-                                        placeholder="Your Name"
-                                    />
-                                </div>
-                            </>
+                    {/* Error Message */}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3"
+                            >
+                                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                <p className="text-sm text-red-300 font-medium">{error}</p>
+                            </motion.div>
                         )}
-                        <div>
-                            <label className="text-xs text-gray-500 block mb-1.5 font-medium">Email</label>
-                            <input
-                                type="email"
-                                value={email} onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
-                                placeholder="you@srm.edu.in"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-500 block mb-1.5 font-medium">Password</label>
-                            <input
+                    </AnimatePresence>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <AnimatePresence mode="popLayout">
+                            {!isLogin && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="space-y-5"
+                                >
+                                    <AuthInput
+                                        icon={User}
+                                        type="text"
+                                        label="Username"
+                                        placeholder="Pick a handle"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                    />
+                                    <AuthInput
+                                        icon={User}
+                                        type="text"
+                                        label="Full Name"
+                                        placeholder="Your real name"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <AuthInput
+                            icon={Mail}
+                            type="email"
+                            label="Student Email"
+                            placeholder="you@srm.edu.in"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+
+                        <div className="space-y-1.5">
+                            <AuthInput
+                                icon={Lock}
                                 type="password"
-                                value={password} onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 outline-none focus:border-violet-500/50 focus:bg-white/[0.06] transition text-white placeholder-gray-600"
+                                label="Password"
                                 placeholder="••••••••"
-                                required
-                                minLength={6}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
+                            {isLogin && (
+                                <div className="flex justify-end">
+                                    <button type="button" className="text-[10px] font-bold text-gray-500 hover:text-vibe-purple transition-colors">
+                                        Forgot Password?
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl font-semibold mt-2 hover:shadow-lg hover:shadow-violet-900/30 transition-all disabled:opacity-50 text-white"
+                            className="w-full py-4 rounded-xl font-bold text-white relative overflow-hidden group mt-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Create Account'}
+                            <div className="absolute inset-0 bg-gradient-to-r from-vibe-purple to-vibe-cyan opacity-90 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                            <span className="relative flex items-center justify-center gap-2">
+                                {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
+                                {!loading && <ArrowRight className="w-4 h-4" />}
+                            </span>
                         </button>
+
+                        <div className="relative py-4">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-[#050508] px-2 text-gray-500">Or continue with</span></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button type="button" className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-white text-sm font-medium">
+                                <Chrome className="w-4 h-4" /> Google
+                            </button>
+                            <button type="button" className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-white text-sm font-medium">
+                                <Github className="w-4 h-4" /> GitHub
+                            </button>
+                        </div>
                     </form>
 
-                    <p className="text-center text-gray-500 mt-5 text-sm">
-                        {isLogin ? "Don't have an account? " : "Already have an account? "}
-                        <button onClick={() => setIsLogin(!isLogin)} className="text-violet-400 hover:text-violet-300 transition font-medium">
-                            {isLogin ? 'Sign Up' : 'Sign In'}
+                    {/* Footer Toggle */}
+                    <p className="text-center text-gray-400 mt-8 text-sm">
+                        {isLogin ? "New to the campus?" : "Already valid?"}
+                        <button
+                            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+                            className="ml-2 text-vibe-cyan hover:text-white font-bold transition-colors"
+                        >
+                            {isLogin ? 'Get Access' : 'Login Here'}
                         </button>
                     </p>
                 </div>

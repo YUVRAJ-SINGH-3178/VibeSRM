@@ -1,92 +1,160 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Grid, Map as MapIcon, Users, MessageSquare, Award, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Home,
+    Map,
+    Plus,
+    MessageCircle,
+    Users,
+    Settings
+} from 'lucide-react';
 import { cn } from '../utils/constants';
 import Logo from '../Logo.png';
 
-export const NavBar = ({ active, setTab, currentUser, onOpenProfile }) => (
-    <nav className="fixed left-0 top-0 h-full w-24 hidden lg:flex flex-col items-center py-10 z-50 border-r border-white/10 bg-gradient-to-b from-[#0a0a12] via-[#080810] to-[#0a0a12] backdrop-blur-2xl shadow-[1px_0_30px_rgba(139,92,246,0.1)]">
-        <div className="absolute right-0 top-0 h-full w-[1px] bg-gradient-to-b from-transparent via-vibe-purple/30 to-transparent" />
+import { useTheme } from '../ThemeContext';
 
-        <div className="absolute left-0 top-0 h-full w-1.5 pointer-events-none">
-            {['dashboard', 'map', 'social', 'chat', 'achievements'].map((id, i) => (
-                active === id && (
-                    <motion.div
-                        key={id}
-                        layoutId="nav-indicator"
-                        className="absolute left-0 w-1.5 h-10 bg-gradient-to-b from-vibe-purple via-vibe-cyan to-vibe-purple rounded-r-full shadow-[0_0_15px_rgba(139,92,246,0.8)]"
-                        style={{ top: `calc(${188 + i * 72}px)` }}
-                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                )
-            ))}
-        </div>
+export const NavBar = ({ active, setTab, currentUser, onOpenProfile, onCreateVibe }) => {
+    const { theme } = useTheme();
 
-        <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center mb-16 relative cursor-pointer group shadow-lg shadow-vibe-purple/30 ring-2 ring-vibe-purple/20"
-        >
-            <div className="absolute inset-0 bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10" />
-            <img src={Logo} alt="VibeSRM" className="w-full h-full object-cover relative z-10" />
-        </motion.div>
-        <div className="flex flex-col gap-4">
-            {[Grid, MapIcon, Users, MessageSquare, Award].map((Icon, i) => {
-                const id = ['dashboard', 'map', 'social', 'chat', 'achievements'][i];
-                const labels = ['Home', 'Map', 'Social', 'Chat', 'Achievements'];
-                const isActive = active === id;
-                return (
-                    <motion.button
-                        key={id}
-                        onClick={() => setTab(id)}
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={cn(
-                            "relative p-4 rounded-2xl transition-all duration-300 group",
-                            isActive
-                                ? "text-white bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/20 shadow-[0_0_25px_rgba(139,92,246,0.4)] border border-vibe-purple/30"
-                                : "text-gray-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
-                        )}
+    const navItems = [
+        { id: 'dashboard', icon: theme.navIcons.home, label: 'Home' },
+        { id: 'map', icon: theme.navIcons.map, label: 'Map' },
+        { id: 'create', icon: theme.navIcons.create, label: 'Vibe', isAction: true },
+        { id: 'social', icon: theme.navIcons.social, label: 'Social' },
+        { id: 'chat', icon: theme.navIcons.chat, label: 'Chat' },
+    ];
+
+    return (
+        <>
+            {/* DESKTOP NAV: Floating Vertical Dock */}
+            <div className="fixed left-6 top-0 bottom-0 flex flex-col justify-center pointer-events-none z-50">
+                <nav role="navigation" aria-label="Main navigation" className={cn("pointer-events-auto flex flex-col gap-5 items-center bg-card backdrop-blur-2xl border border-border p-3 shadow-2xl obsidian-card transition-all duration-300", theme.navShape)}>
+
+                    {/* APP LOGO */}
+                    <div className="p-2 mb-1 rounded-xl bg-gradient-to-br from-white/10 to-transparent border border-white/5 shadow-inner">
+                        <img
+                            src={Logo}
+                            alt="VibeSRM"
+                            className="w-8 h-8 object-contain drop-shadow-[0_0_10px_rgba(139,92,246,0.3)]"
+                        />
+                    </div>
+
+                    {/* Profile Top */}
+                    <button
+                        onClick={onOpenProfile}
+                        className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border hover:border-vibe-purple transition-all duration-300 group shadow-md"
                     >
-                        {isActive && (
-                            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-vibe-purple/20 to-vibe-cyan/10 blur-xl -z-10" />
-                        )}
-                        <Icon className={cn("w-6 h-6 transition-all", isActive && "drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]")} strokeWidth={isActive ? 2.5 : 1.5} />
-                        <span className="absolute left-full ml-4 px-4 py-2 bg-[#0A0A0F]/95 border border-vibe-purple/20 rounded-xl text-xs font-bold whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-lg shadow-vibe-purple/10 backdrop-blur-xl">
-                            {labels[i]}
-                        </span>
-                    </motion.button>
-                )
-            })}
-        </div>
-        <div className="mt-auto flex flex-col items-center gap-5">
-            <motion.button
-                onClick={() => setTab('settings')}
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                transition={{ duration: 0.3 }}
-                className={cn(
-                    "p-3.5 rounded-xl transition-all border",
-                    active === 'settings'
-                        ? "text-white bg-gradient-to-br from-vibe-purple/30 to-vibe-cyan/20 shadow-[0_0_20px_rgba(139,92,246,0.4)] border-vibe-purple/30"
-                        : "text-gray-500 hover:text-white hover:bg-white/5 border-transparent hover:border-white/10"
-                )}
-                title="Settings"
-            >
-                <Settings className={cn("w-5 h-5", active === 'settings' && "drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]")} />
-            </motion.button>
-            <motion.button
-                onClick={onOpenProfile}
-                whileHover={{ scale: 1.1 }}
-                className="w-12 h-12 rounded-xl border-2 border-vibe-purple/40 overflow-hidden hover:border-vibe-purple transition-all cursor-pointer shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]"
-                title={currentUser ? currentUser.username || 'Your Profile' : 'Not signed in'}
-            >
-                <img
-                    src={currentUser?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser?.username || currentUser?.email || 'guest'}`}
-                    alt="User"
-                    className="w-full h-full object-cover"
-                />
-            </motion.button>
-        </div>
-    </nav>
-);
+                        <img
+                            src={currentUser?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${currentUser?.username || 'user'}`}
+                            alt="Profile"
+                            className="w-full h-full object-cover bg-background group-hover:scale-110 transition-transform duration-500"
+                        />
+                    </button>
+
+                    <div className="w-8 h-[1px] bg-white/10" />
+
+                    {/* Main Items */}
+                    <div className="flex flex-col gap-2">
+                        {navItems.filter(i => !i.isAction).map((item) => {
+                            const isActive = active === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setTab(item.id)}
+                                    className={cn(
+                                        "relative p-3 rounded-2xl transition-all duration-300 group hover:bg-card-hover",
+                                        isActive ? "text-foreground" : "text-foreground-muted"
+                                    )}
+                                    aria-label={item.label}
+                                    aria-current={isActive ? 'page' : undefined}
+                                >
+                                    <div className="relative z-10">
+                                        <item.icon strokeWidth={isActive ? 2.5 : 2} className="w-5 h-5" />
+                                    </div>
+
+                                    {/* Tooltip */}
+                                    <span className="absolute left-14 top-1/2 -translate-y-1/2 bg-black/90 px-3 py-1.5 rounded-xl text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none backdrop-blur-md border border-white/10 shadow-xl z-50">
+                                        {item.label}
+                                    </span>
+
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="desktop-active"
+                                            className="absolute inset-0 bg-white/10 rounded-2xl border border-white/5 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+                                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                        />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="w-8 h-[1px] bg-white/10" />
+
+                    {/* Create Action */}
+                    <button
+                        onClick={onCreateVibe}
+                        className={cn("p-3 rounded-2xl text-white shadow-lg  hover:scale-105 active:scale-95 transition-transform duration-200 mt-1", theme.buttonStyle)}
+                    >
+                        <theme.navIcons.create className="w-5 h-5" />
+                    </button>
+
+                    {/* Settings */}
+                    <div className="pt-2">
+                        <button
+                            onClick={() => setTab('settings')}
+                            className={cn(
+                                "p-3 rounded-2xl transition-all duration-300 text-foreground-muted hover:text-foreground hover:bg-card-hover",
+                                active === 'settings' && "bg-card-hover text-foreground"
+                            )}
+                        >
+                            <theme.navIcons.settings className="w-5 h-5" />
+                        </button>
+                    </div>
+                </nav>
+            </div>
+
+
+            {/* MOBILE NAV: Floating Glass Bar */}
+            <nav role="navigation" aria-label="Mobile navigation" className={cn("fixed bottom-6 left-4 right-4 h-20 bg-card/90 backdrop-blur-3xl border border-border flex items-center justify-between px-6 lg:hidden z-50 shadow-2xl obsidian-card overflow-visible", theme.mobileNavShape)}>
+                {navItems.map((item) => {
+                    if (item.isAction) {
+                        return (
+                            <div key={item.id} className="relative -top-6">
+                                <button
+                                    onClick={onCreateVibe}
+                                    className="w-16 h-16 bg-background rounded-full flex items-center justify-center border-4 border-background shadow-xl relative overflow-hidden group"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-vibe-purple to-vibe-cyan opacity-100 group-hover:opacity-90 transition-opacity" />
+                                    <theme.navIcons.create className="w-8 h-8 text-white relative z-10" />
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    const isActive = active === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => setTab(item.id)}
+                            className="flex flex-col items-center gap-1 group"
+                        >
+                            <div className={cn(
+                                "p-2 rounded-xl transition-all duration-300 relative",
+                                isActive ? "text-white" : "text-gray-500 group-hover:text-gray-300"
+                            )}>
+                                <item.icon strokeWidth={isActive ? 2.5 : 2} className="w-6 h-6" />
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="mobile-active"
+                                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-foreground rounded-full shadow-[0_0_8px_white]"
+                                    />
+                                )}
+                            </div>
+                        </button>
+                    );
+                })}
+            </nav>
+        </>
+    );
+};
