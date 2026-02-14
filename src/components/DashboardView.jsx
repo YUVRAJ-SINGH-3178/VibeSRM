@@ -318,7 +318,7 @@ export const DashboardView = ({
                 <TiltCard className="md:col-span-2 md:row-span-1 border-0" delay={0.1}>
                     <div className="absolute inset-0 bg-black">
                         <img
-                            src={featuredEvent.image}
+                            src={featuredEvent.image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80"}
                             className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-1000"
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent" />

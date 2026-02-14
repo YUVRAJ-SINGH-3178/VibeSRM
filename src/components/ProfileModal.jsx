@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, Star, Zap, Target, Award, Calendar, Clock, Flame, Users, Moon, MapPin } from 'lucide-react';
+import { X, Trophy, Star, Zap, Target, Award, Calendar, Clock, Flame, Users, Moon, MapPin, Check } from 'lucide-react';
 import { cn, YEAR_OPTIONS, INTEREST_OPTIONS } from '../utils/constants';
 
 // Mock Achievement Data
@@ -17,7 +17,7 @@ const ACHIEVEMENTS = [
 export const ProfileModal = ({ isOpen, onClose, currentUser, onSave }) => {
     const [fullName, setFullName] = useState(currentUser?.full_name || currentUser?.fullName || '');
     const [yearOfStudy, setYearOfStudy] = useState(currentUser?.year_of_study || '');
-    const [interests, setInterests] = useState(currentUser?.interests || []);
+    const [interests, setInterests] = useState(currentUser?.tags || currentUser?.interests || []);
     const [freeTime, setFreeTime] = useState(currentUser?.free_time || '');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -27,7 +27,7 @@ export const ProfileModal = ({ isOpen, onClose, currentUser, onSave }) => {
         if (!isOpen) return;
         setFullName(currentUser?.full_name || currentUser?.fullName || '');
         setYearOfStudy(currentUser?.year_of_study || '');
-        setInterests(currentUser?.interests || []);
+        setInterests(currentUser?.tags || currentUser?.interests || []);
         setFreeTime(currentUser?.free_time || '');
         setError('');
         setViewMode('profile');
@@ -223,6 +223,30 @@ export const ProfileModal = ({ isOpen, onClose, currentUser, onSave }) => {
                                                 placeholder="e.g. Weekdays After 6 PM"
                                                 className="w-full mt-1 bg-card/40 border border-border rounded-xl px-4 py-3 text-foreground outline-none focus:border-vibe-purple transition-colors"
                                             />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-card/5 p-4 rounded-3xl border border-border">
+                                        <label className="text-xs font-bold text-foreground-muted uppercase ml-1 mb-3 block">My Tribes & Interests</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {INTEREST_OPTIONS.map((opt) => {
+                                                const isSelected = interests.includes(opt);
+                                                return (
+                                                    <button
+                                                        key={opt}
+                                                        onClick={() => toggleInterest(opt)}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-full text-xs font-bold transition-all border flex items-center gap-1.5",
+                                                            isSelected
+                                                                ? "bg-vibe-purple/20 border-vibe-purple text-vibe-purple shadow-[0_0_10px_rgba(124,58,237,0.3)] scale-105"
+                                                                : "bg-card/40 border-border text-foreground-muted hover:bg-card-hover hover:text-foreground"
+                                                        )}
+                                                    >
+                                                        {isSelected && <Check className="w-3 h-3" />}
+                                                        {opt}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 

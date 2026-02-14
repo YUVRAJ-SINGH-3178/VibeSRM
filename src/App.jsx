@@ -23,6 +23,7 @@ import { ChatView } from './components/ChatView';
 
 import { SettingsView } from './components/SettingsView';
 import { ValentineParticles } from './components/ValentineParticles';
+import { TribeView } from './components/TribeView';
 
 // Map backend data to frontend format
 const mapLocation = (loc) => ({
@@ -67,7 +68,8 @@ const mapEvent = (e) => ({
   isMajor: e.is_major || e.isMajor || false,
   startTime: e.start_time || e.startTime || new Date().toISOString(),
   attendees: e.attendees || [],
-  creator_id: e.creator_id
+  creator_id: e.creator_id,
+  image: e.image_url || e.photo_url || e.image || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80"
 });
 
 const ThemeOverlay = () => {
@@ -368,6 +370,11 @@ export default function App() {
               {activeTab === 'map' && (
                 <div className="h-full w-full">
                   <FullMapView locations={locations} events={eventsData} selected={selectedLoc} onSelect={setSelectedLoc} />
+                </div>
+              )}
+              {activeTab === 'tribe' && (
+                <div className="pt-20 lg:pt-10 px-4 h-full w-full max-w-[1600px] mx-auto">
+                  <TribeView currentUser={currentUser} onChatWith={handleChatWith} />
                 </div>
               )}
               {activeTab === 'social' && (

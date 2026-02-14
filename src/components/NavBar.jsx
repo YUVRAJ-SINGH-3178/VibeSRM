@@ -6,7 +6,8 @@ import {
     Plus,
     MessageCircle,
     Users,
-    Settings
+    Settings,
+    Sparkles
 } from 'lucide-react';
 import { cn } from '../utils/constants';
 import Logo from '../Logo.png';
@@ -19,6 +20,7 @@ export const NavBar = ({ active, setTab, currentUser, onOpenProfile, onCreateVib
     const navItems = [
         { id: 'dashboard', icon: theme.navIcons.home, label: 'Home' },
         { id: 'map', icon: theme.navIcons.map, label: 'Map' },
+        { id: 'tribe', icon: Sparkles, label: 'Tribe' },
         { id: 'create', icon: theme.navIcons.create, label: 'Vibe', isAction: true },
         { id: 'social', icon: theme.navIcons.social, label: 'Social' },
         { id: 'chat', icon: theme.navIcons.chat, label: 'Chat' },

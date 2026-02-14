@@ -76,11 +76,11 @@ export const user = {
         const flatProfile = profile ? {
             ...profile,
             year_of_study: metadata.year_of_study,
-            interests: metadata.interests || [],
+            tags: profile.tags || metadata.interests || [], // Prefer DB tags
             free_time: metadata.free_time
         } : {
             year_of_study: metadata.year_of_study,
-            interests: metadata.interests || [],
+            tags: metadata.interests || [],
             free_time: metadata.free_time
         };
 
@@ -122,35 +122,39 @@ export const user = {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
-        const { year_of_study, interests, free_time, ...dbFields } = settings;
+        const { year_of_study, interests, tags, free_time, ...dbFields } = settings;
+        const normalizedTags = tags || interests || [];
 
         const { data: authData, error: authError } = await supabase.auth.updateUser({
             data: {
                 year_of_study: year_of_study || null,
-                interests: interests || [],
+                interests: normalizedTags, // Keep metadata in sync for now
                 free_time: free_time || null
             }
         });
 
         if (authError) throw authError;
 
-        const dbPayload = {};
+        const dbPayload = { tags: normalizedTags }; // Always update tags column
         if (dbFields.full_name !== undefined) dbPayload.full_name = dbFields.full_name;
         if (dbFields.username !== undefined) dbPayload.username = dbFields.username;
         if (dbFields.avatar_url !== undefined) dbPayload.avatar_url = dbFields.avatar_url;
 
         if (Object.keys(dbPayload).length > 0) {
-            await supabase
+            const { error: updateError } = await supabase
                 .from('users')
                 .update(dbPayload)
                 .eq('id', user.id);
+
+            if (updateError) throw updateError;
         }
 
         const metadata = authData.user?.user_metadata || {};
         return {
             ...dbFields,
             year_of_study: metadata.year_of_study,
-            interests: metadata.interests || [],
+            tags: normalizedTags,
+            interests: normalizedTags, // Keep interests for backward compat
             free_time: metadata.free_time
         };
     }
@@ -245,6 +249,51 @@ export const social = {
             .select('*, friend:friend_id(id, username, full_name, avatar_url)')
             .eq('user_id', user.id)
             .eq('status', 'accepted');
+        if (error) throw error;
+        return data;
+    },
+
+    getMatches: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // 1. Get my tags
+        const { data: myProfile } = await supabase
+            .from('users')
+            .select('tags')
+            .eq('id', user.id)
+            .single();
+
+        const myTags = myProfile?.tags || [];
+        if (myTags.length === 0) return [];
+
+        // 2. Find users with overlapping tags
+        const { data, error } = await supabase
+            .from('users')
+            .select('id, username, full_name, avatar_url, tags')
+            .neq('id', user.id)
+            .overlaps('tags', myTags)
+            .limit(20);
+
+        if (error) throw error;
+
+        // Calculate common tags count
+        return data.map(u => ({
+            ...u,
+            commonTags: u.tags ? u.tags.filter(t => myTags.includes(t)) : []
+        })).sort((a, b) => b.commonTags.length - a.commonTags.length);
+    },
+
+    addFriend: async (friendId) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+            .from('friendships')
+            .insert({
+                user_id: user.id,
+                friend_id: friendId,
+                status: 'pending'
+            })
+            .select()
+            .single();
         if (error) throw error;
         return data;
     }

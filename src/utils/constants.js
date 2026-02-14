@@ -67,8 +67,21 @@ export const SQUAD_MEMBERS = [
     { id: 'rohan', name: 'Rohan Verma', status: 'studying in Tech Park', seed: 'rohan' }
 ];
 
+export const MOCK_TRIBE = [
+    { id: 'm1', full_name: 'Alex The Lifter', username: 'gymrat_alex', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex', commonTags: ['GymRat', 'Protein', 'Sports'] },
+    { id: 'm2', full_name: 'Sarah Dev', username: 'code_wizard', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah', commonTags: ['TechGeek', 'Coder', 'Hackathon'] },
+    { id: 'm3', full_name: 'Sam Eats', username: 'foodie_sam', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sam', commonTags: ['Foodie', 'Pizza', 'Travel'] },
+    { id: 'm4', full_name: 'Kenji Anime', username: 'otaku_kenji', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kenji', commonTags: ['Anime', 'Manga', 'Japan'] },
+    { id: 'm5', full_name: 'Lisa Beats', username: 'lisa_music', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lisa', commonTags: ['Music', 'Guitar', 'Concerts'] },
+    { id: 'm6', full_name: 'Mike Startups', username: 'founder_mike', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=mike', commonTags: ['Startups', 'TechGeek', 'Business'] },
+];
+
 export const YEAR_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'];
-export const INTEREST_OPTIONS = ['Studying', 'Sports', 'Gym', 'Badminton', 'Gaming', 'Music', 'Coding', 'Events', 'Reading'];
+export const INTEREST_OPTIONS = [
+    'GymRat', 'Foodie', 'TechGeek', 'Anime', 'Gamer', 'Coder',
+    'Musician', 'Artist', 'Bookworm', 'NightOwl', 'PartyAnimal',
+    'Sports', 'Badminton', 'Startups', 'Photography', 'Travel'
+];
 
 
 export const BUILDING_IMAGES = {
